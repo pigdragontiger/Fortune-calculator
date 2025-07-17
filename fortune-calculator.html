@@ -223,7 +223,7 @@ const FortuneApp = {
                     const zodiacAdvice = this.generateZodiacAdvice(chineseZodiacSign, dailyZodiac, seededRandom);
                     const symbolAdvice = this.generateSymbolAdvice(this.getSeasonByMonth(month), currentSeason, month, seededRandom);
                     
-                    this.updateCard('numerology', 1️⃣ 수호 숫자 (35%)`, `오늘의 숫자(${todayNumber})와 당신의 탄생수(${lifePathNumber})는 <strong>${scores.numerology.toFixed(1)}</strong>점의 조화를 이룹니다.`, numerologyAdvice, scores.numerology);
+                    this.updateCard('numerology', `1️⃣ 수호 숫자 (35%)`, `오늘의 숫자(${todayNumber})와 당신의 탄생수(${lifePathNumber})는 <strong>${scores.numerology.toFixed(1)}</strong>점의 조화를 이룹니다.`, numerologyAdvice, scores.numerology);
                     this.updateCard('astrology', `♒️ ${zodiacSign} (20%)`, `오늘의 '${moonPhase.name}' 기운과 당신의 <strong>${FortuneApp.data.astrologyData.elements[zodiacSign]}</strong> 원소 별자리는 <strong>${scores.astrology.toFixed(1)}</strong>점의 조화를 이룹니다.`, astrologyAdvice, scores.astrology);
                     this.updateCard('chinese-zodiac', `🐭 ${chineseZodiacSign}띠 (35%)`, `오늘 '${dailyZodiac}의 날'과 당신의 띠는 <strong>'${this.getZodiacRelation(chineseZodiacSign, dailyZodiac).text}'</strong> 관계이므로 <strong>${scores.chineseZodiac.toFixed(1)}</strong>점 입니다.`, zodiacAdvice, scores.chineseZodiac);
                     this.updateCard('birth-symbol', `? 탄생 상징 (10%)`, `현재 계절 '${currentSeason}'과 당신의 탄생월(${month}월, <strong>${this.getSeasonByMonth(month)}</strong>)의 기운은 <strong>${scores.birthSymbol.toFixed(1)}</strong>점의 조화를 이룹니다. 당신의 탄생석은 <strong>${FortuneApp.data.adviceKeywords.symbol.birthstones[month].name}</strong>입니다.`, symbolAdvice, scores.birthSymbol);
@@ -672,3 +672,4 @@ FortuneApp.init();
 
 </body>
 </html>
+?
