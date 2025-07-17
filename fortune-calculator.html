@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>✨ 재미로 보는 통합 운세 ✨</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Noto Sans KR', sans-serif; }
+        .fade-in { animation: fadeIn 0.8s ease-in-out; }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .gradient-bg { background: linear-gradient(135deg, #434343 0%, #000000 100%); }
+        .card-bg {
+            background-color: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .card-bg:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+        }
+        .info-btn {
+            background-color: rgba(255, 255, 255, 0.15);
+            color: white; border-radius: 50%; width: 32px; height: 32px;
+            font-size: 18px; font-weight: bold; border: none; cursor: pointer;
+            transition: background-color 0.3s; flex-shrink: 0;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .info-btn:hover { background-color: rgba(255, 255, 255, 0.3); }
+        .modal-content-bg { background-color: #f8fafc; }
+        .score-gauge-bg { background-color: rgba(0, 0, 0, 0.2); border-radius: 9999px; overflow: hidden; height: 12px; }
+        .score-gauge-bar { height: 100%; border-radius: 9999px; background: linear-gradient(90deg, #f6e384, #f9a825); transition: width 1s ease-out; }
+        .advice-box { margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px solid rgba(255, 255, 255, 0.2); }
+        .lotto-box { margin-top: 0.75rem; padding: 0.5rem; background-color: rgba(0,0,0,0.2); border-radius: 0.5rem; font-size: 0.875rem; line-height: 1.5; }
+        .guide-item summary { padding: 0.5rem; background-color: #e2e8f0; border-radius: 0.375rem; font-weight: 600; cursor: pointer; }
+        .guide-item summary::marker { content: '➕'; color: #4a5568; font-size: 0.8em; }
+        .guide-item[open] summary::marker { content: '➖'; }
+        .guide-item div { padding: 0.75rem; background-color: #f1f5f9; border-radius: 0.375rem; margin-top: 0.25rem; }
+        
+        .spinner { animation: spin 1s linear infinite; width: 20px; height: 20px; }
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        #calculateBtn:disabled { opacity: 0.7; cursor: not-allowed; }
+        .share-btn { background-color: #fbbf24; color: #44403c; font-weight: bold; padding: 8px 16px; border-radius: 9999px; font-size: 0.875rem; transition: all 0.3s; border: 2px solid transparent; }
+        .share-btn:hover { background-color: #f59e0b; transform: scale(1.05); }
+        .share-btn.copied { background-color: #22c55e; color: white; cursor: default; transform: scale(1); }
+
+        .hourly-chart { display: flex; justify-content: space-between; gap: 2px; height: 100px; align-items: flex-end; }
+        .hourly-bar-wrapper { flex: 1; display: flex; flex-direction: column; align-items: center; font-size: 0.7rem; color: #cbd5e1; }
+        .hourly-bar { width: 100%; border-radius: 3px 3px 0 0; transition: height 1s ease-out; }
+
+        #integrated-theme-card {
+            background: linear-gradient(145deg, rgba(255, 255, 255, 0.15), rgba(255, 255, 255, 0.05));
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .theme-keyword-box {
+            background-color: rgba(0,0,0,0.3);
+            border-radius: 0.5rem;
+            padding: 0.25rem 0.75rem;
+            font-size: 0.875rem;
+            font-weight: bold;
+            color: #fde047; /* yellow-300 */
+        }
+    </style>
+</head>
+<body class="gradient-bg min-h-screen flex items-center justify-center p-4">
+
+    <main class="w-full max-w-3xl mx-auto bg-black/20 backdrop-blur-lg rounded-2xl shadow-2xl p-6 md:p-10 text-white">
+        
+        <header class="text-center mb-8">
+            <h1 class="text-3xl md:text-4xl font-bold mb-2">✨ 재미로 보는 통합 운세 ✨</h1>
+            <p class="text-lg text-gray-200">운세가 좋은 날, 행운의 로또 번호를 제공합니다!</p>
+        </header>
+
+        <div class="flex flex-col sm:flex-row items-center justify-center gap-4 mb-8">
+            <input type="date" id="birthdate" class="w-full sm:w-auto bg-white/20 text-white placeholder-gray-300 border-2 border-transparent focus:border-white focus:ring-0 rounded-lg px-4 py-3 text-lg transition duration-300" max="2999-12-31">
+            <button id="calculateBtn" class="w-full sm:w-auto bg-yellow-400 hover:bg-yellow-500 text-gray-800 font-bold py-3 px-8 rounded-lg text-lg transition duration-300 transform hover:scale-105 shadow-lg flex items-center justify-center gap-2">
+                <span id="btnText">운세 분석하기</span>
+                <svg id="spinner" class="spinner hidden" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+            </button>
+            <button id="guideBtn" class="info-btn" aria-label="도움말 보기">ⓘ</button>
+        </div>
+        
+        <div id="messageBox" class="text-center text-yellow-300 font-semibold mb-6"></div>
+
+        <div id="results" class="hidden space-y-6">
+            <div id="result-header" class="text-center p-4 rounded-lg bg-black/20">
+                <h2 class="text-2xl font-bold"></h2>
+                <p class="text-gray-200"></p>
+            </div>
+            
+            <div id="integrated-theme-card" class="card-bg p-6 rounded-xl shadow-lg fade-in"></div>
+
+            <div id="total-score-section" class="card-bg p-6 rounded-xl shadow-lg fade-in" style="animation-delay: 0.1s;">
+                <h3 class="text-2xl font-bold text-center mb-4">오늘의 통합 운세 점수</h3>
+                <div class="flex items-center justify-center gap-4 mb-2">
+                    <span id="total-score-text" class="text-5xl font-bold text-yellow-300">0.0</span>
+                    <span class="text-2xl font-bold">/ 10</span>
+                </div>
+                <div class="score-gauge-bg w-full max-w-xs mx-auto mb-3">
+                    <div id="total-score-bar" class="score-gauge-bar" style="width: 0%;"></div>
+                </div>
+                <div id="total-score-summary" class="text-center text-gray-200 text-sm mt-3 min-h-[40px]"></div>
+                <div id="share-container" class="text-center mt-4 hidden">
+                    <button id="shareBtn" class="share-btn">📋 결과 공유하기</button>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div id="numerology" class="card-bg p-6 rounded-xl shadow-lg fade-in" style="animation-delay: 0.2s;"></div>
+                <div id="astrology" class="card-bg p-6 rounded-xl shadow-lg fade-in" style="animation-delay: 0.3s;"></div>
+                <div id="chinese-zodiac" class="card-bg p-6 rounded-xl shadow-lg fade-in" style="animation-delay: 0.4s;"></div>
+                <div id="birth-symbol" class="card-bg p-6 rounded-xl shadow-lg fade-in" style="animation-delay: 0.5s;"></div>
+            </div>
+
+            <div id="special-energy" class="card-bg p-6 rounded-xl shadow-lg fade-in hidden" style="animation-delay: 0.6s;"></div>
+            <div id="hourly-fortune" class="card-bg p-6 rounded-xl shadow-lg fade-in" style="animation-delay: 0.7s;"></div>
+
+        </div>
+    </main>
+
+    <div id="infoModal" class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center p-4 hidden fade-in">
+        <div class="modal-content-bg rounded-2xl p-6 max-w-md w-full text-gray-800 shadow-2xl transform transition-transform duration-300 scale-95">
+            <div class="flex justify-between items-center mb-4">
+                <h3 id="modalTitle" class="text-2xl font-bold text-gray-900"></h3>
+                <button id="closeModalBtn" class="text-gray-500 hover:text-gray-800 text-3xl font-light">&times;</button>
+            </div>
+            <div id="modalContent" class="text-gray-700 leading-relaxed text-sm max-h-[70vh] overflow-y-auto"></div>
+        </div>
+    </div>
+
+<script type="module">
+// 앱 전체를 모듈 패턴으로 감싸 전역 스코프 오염 방지
+const FortuneApp = {
+    elements: {
+        birthdateInput: document.getElementById('birthdate'),
+        calculateBtn: document.getElementById('calculateBtn'),
+        btnText: document.getElementById('btnText'),
+        spinner: document.getElementById('spinner'),
+        guideBtn: document.getElementById('guideBtn'),
+        resultsDiv: document.getElementById('results'),
+        messageBox: document.getElementById('messageBox'),
+        infoModal: document.getElementById('infoModal'),
+        modalTitle: document.getElementById('modalTitle'),
+        modalContent: document.getElementById('modalContent'),
+        closeModalBtn: document.getElementById('closeModalBtn'),
+        shareContainer: document.getElementById('share-container'),
+        shareBtn: document.getElementById('shareBtn'),
+        specialEnergyCard: document.getElementById('special-energy'),
+        hourlyFortuneCard: document.getElementById('hourly-fortune'),
+        integratedThemeCard: document.getElementById('integrated-theme-card'),
+    },
+    state: {
+        totalScore: 0,
+    },
+    data: {
+        explanations: {},
+        adviceKeywords: {},
+        zodiacData: {},
+        astrologyData: {},
+        numerologyHarmony: {},
+        shinsalData: {},
+    },
+    methods: {
+        setLoading(isLoading) {
+            FortuneApp.elements.calculateBtn.disabled = isLoading;
+            FortuneApp.elements.btnText.textContent = isLoading ? "분석중..." : "운세 분석하기";
+            FortuneApp.elements.spinner.classList.toggle('hidden', !isLoading);
+        },
+
+        displayFortunes() {
+            if (!FortuneApp.elements.birthdateInput.value) {
+                FortuneApp.elements.messageBox.textContent = "생년월일을 선택해주세요!";
+                FortuneApp.elements.resultsDiv.classList.add('hidden');
+                return;
+            }
+            FortuneApp.elements.messageBox.textContent = "";
+            this.setLoading(true);
+
+            setTimeout(() => {
+                try {
+                    const birthDate = new Date(FortuneApp.elements.birthdateInput.value);
+                    const [year, month, day] = [birthDate.getFullYear(), birthDate.getMonth() + 1, birthDate.getDate()];
+                    const today = new Date();
+                    const [today_yyyy, today_mm, today_dd] = [today.getFullYear(), today.getMonth() + 1, today.getDate()];
+
+                    const lifePathNumber = this.calculateLifePathNumber(year, month, day);
+                    const zodiacSign = this.getZodiacSign(month, day);
+                    const chineseZodiacSign = this.getChineseZodiac(year);
+                    const todayNumber = this.calculateLifePathNumber(today_yyyy, today_mm, today_dd);
+                    const dailyZodiac = this.getDailyZodiac(today);
+                    const moonPhase = this.getMoonPhase(today);
+                    const currentSeason = this.getCurrentSeason(today);
+                    
+                    const scores = {
+                        numerology: this.getNumerologyScore(lifePathNumber, todayNumber),
+                        astrology: this.getAstrologyScore(zodiacSign, moonPhase),
+                        chineseZodiac: this.getZodiacScore(chineseZodiacSign, dailyZodiac),
+                        birthSymbol: this.getBirthSymbolScore(month, currentSeason)
+                    };
+
+                    FortuneApp.state.totalScore = (scores.numerology * 0.35) + (scores.chineseZodiac * 0.35) + (scores.astrology * 0.20) + (scores.birthSymbol * 0.10);
+                    
+                    const lottoSeed = { year, month, day, scores: Object.values(scores) };
+                    const dailySeed = year * 1000000 + month * 10000 + day * 100 + today_yyyy * 100 + today_mm + today_dd;
+                    const seededRandom = this.createSeededRandom(dailySeed);
+
+                    this.updateResultHeader(year, month, day, zodiacSign, chineseZodiacSign);
+                    this.updateTotalScore(FortuneApp.state.totalScore, lottoSeed, scores);
+                    
+                    const numerologyAdvice = this.generateNumerologyAdvice(lifePathNumber, todayNumber, seededRandom);
+                    const astrologyAdvice = this.generateAstrologyAdvice(zodiacSign, moonPhase, lifePathNumber, seededRandom);
+                    const zodiacAdvice = this.generateZodiacAdvice(chineseZodiacSign, dailyZodiac, seededRandom);
+                    const symbolAdvice = this.generateSymbolAdvice(this.getSeasonByMonth(month), currentSeason, month, seededRandom);
+                    
+                    this.updateCard('numerology', 1️⃣ 수호 숫자 (35%)`, `오늘의 숫자(${todayNumber})와 당신의 탄생수(${lifePathNumber})는 <strong>${scores.numerology.toFixed(1)}</strong>점의 조화를 이룹니다.`, numerologyAdvice, scores.numerology);
+                    this.updateCard('astrology', `♒️ ${zodiacSign} (20%)`, `오늘의 '${moonPhase.name}' 기운과 당신의 <strong>${FortuneApp.data.astrologyData.elements[zodiacSign]}</strong> 원소 별자리는 <strong>${scores.astrology.toFixed(1)}</strong>점의 조화를 이룹니다.`, astrologyAdvice, scores.astrology);
+                    this.updateCard('chinese-zodiac', `🐭 ${chineseZodiacSign}띠 (35%)`, `오늘 '${dailyZodiac}의 날'과 당신의 띠는 <strong>'${this.getZodiacRelation(chineseZodiacSign, dailyZodiac).text}'</strong> 관계이므로 <strong>${scores.chineseZodiac.toFixed(1)}</strong>점 입니다.`, zodiacAdvice, scores.chineseZodiac);
+                    this.updateCard('birth-symbol', `? 탄생 상징 (10%)`, `현재 계절 '${currentSeason}'과 당신의 탄생월(${month}월, <strong>${this.getSeasonByMonth(month)}</strong>)의 기운은 <strong>${scores.birthSymbol.toFixed(1)}</strong>점의 조화를 이룹니다. 당신의 탄생석은 <strong>${FortuneApp.data.adviceKeywords.symbol.birthstones[month].name}</strong>입니다.`, symbolAdvice, scores.birthSymbol);
+                    
+                    const shinsal = this.calculateShinsal(chineseZodiacSign, dailyZodiac);
+                    this.updateSpecialEnergyCard(shinsal);
+
+                    const hourlyFortunes = this.calculateHourlyFortunes(chineseZodiacSign);
+                    this.updateHourlyFortuneCard(hourlyFortunes);
+
+                    const integratedTheme = this.generateIntegratedTheme(chineseZodiacSign, lifePathNumber, seededRandom);
+                    this.updateIntegratedThemeCard(integratedTheme);
+
+                    FortuneApp.elements.resultsDiv.classList.remove('hidden');
+                    FortuneApp.elements.shareContainer.classList.remove('hidden');
+                } catch (error) {
+                    console.error("운세 계산 중 오류 발생:", error);
+                    FortuneApp.elements.messageBox.textContent = "오류가 발생했습니다. 잠시 후 다시 시도해주세요.";
+                } finally {
+                    this.setLoading(false);
+                }
+            }, 500);
+        },
+        
+        generateLottoNumbers(seed) {
+            const nums = new Set();
+            [seed.month, seed.day, ...seed.scores].forEach(n => { if (n > 0 && n <= 45) nums.add(Math.round(n)); });
+            let s = seed.year + seed.month * 31 + seed.day * 17 + seed.scores.reduce((a, b) => a + b, 0);
+            const pR = () => (s = (s * 9301 + 49297) % 233280, s / 233280);
+            while (nums.size < 6) { const n = Math.floor(pR() * 45) + 1; if (!nums.has(n)) nums.add(n); }
+            return Array.from(nums).sort((a, b) => a - b).join(', ');
+        },
+        
+        updateTotalScore(score, seed, scores) {
+            document.getElementById('total-score-text').textContent = score.toFixed(1);
+            document.getElementById('total-score-bar').style.width = `${score * 10}%`;
+            
+            const hasPeakScore = Object.values(scores).some(s => s >= 9.5);
+            const fortuneNames = {'numerology':'수호 숫자', 'astrology':'별자리', 'chineseZodiac':'띠', 'birthSymbol':'탄생 상징'};
+            const bestKey = Object.keys(scores).reduce((a, b) => scores[a] > scores[b] ? a : b);
+            const bestFortune = ` <br>특히 <strong class="text-yellow-200">${fortuneNames[bestKey]}</strong> 운의 기운이 가장 좋네요!`;
+
+            let summaryHTML = "";
+
+            if (score >= 9.5) {
+                summaryHTML = `<strong class="text-yellow-300">역대급 행운의 날! ✨</strong><br>하늘의 모든 기운이 당신을 향하는, 1년 중 며칠 안 되는 완벽한 날입니다.${bestFortune} 이 특별한 행운을 기념하여, 재미로 보는 로또 번호를 선물해 드립니다.<div class="lotto-box">🍀 행운 번호 1: [ ${this.generateLottoNumbers({...seed, year: seed.year + 1})} ]<br>🍀 행운 번호 2: [ ${this.generateLottoNumbers({...seed, year: seed.year + 2})} ]<br>🍀 행운 번호 3: [ ${this.generateLottoNumbers({...seed, year: seed.year + 3})} ]</div>`;
+            } else if (score >= 8.5) {
+                summaryHTML = `<strong class="text-yellow-300">최상의 날! 🚀</strong><br>자신감이 넘치고, 하는 일마다 좋은 성과가 따라옵니다.${bestFortune} 이 좋은 기운을 담아 행운의 번호 2세트를 추천해 드려요.<div class="lotto-box">🍀 행운 번호 1: [ ${this.generateLottoNumbers({...seed, month: seed.month + 1})} ]<br>🍀 행운 번호 2: [ ${this.generateLottoNumbers({...seed, month: seed.month + 2})} ]</div>`;
+            } else if (score >= 8.0) {
+                summaryHTML = `<strong class="text-yellow-300">기분 좋은 날! 😊</strong><br>예상치 못한 작은 행운들이 당신을 미소 짓게 할 거예요.${bestFortune} 작은 행운을 더해줄 로또 번호 1세트를 함께 드립니다.<div class="lotto-box">🍀 행운 번호: [ ${this.generateLottoNumbers(seed)} ]</div>`;
+            } else if (hasPeakScore) {
+                summaryHTML = `<strong class="text-yellow-300">특별한 기운이 감도는 날! 🌟</strong><br>통합 점수는 평범하지만, ${fortuneNames[bestKey]} 운의 기운이 유독 강하게 빛나고 있습니다! 이 특별한 에너지를 기념하여 로또 번호 1세트를 드립니다.<div class="lotto-box">🍀 행운 번호: [ ${this.generateLottoNumbers(seed)} ]</div>`;
+            } else if (score >= 6.5) {
+                summaryHTML = `<strong class="text-yellow-300">무난한 날</strong><br>큰 문제 없이 순조롭게 흘러가는 평화로운 하루입니다.`;
+            } else if (score >= 5.0) {
+                summaryHTML = `<strong class="text-yellow-300">신중해야 할 날</strong><br>현상 유지에 힘쓰고, 무리하지 않는 것이 좋습니다.`;
+            } else if (score >= 3.5) {
+                summaryHTML = `<strong class="text-yellow-300">주의가 필요한 날</strong><br>작은 실수가 생길 수 있으니 꼼꼼함이 필요합니다.`;
+            } else {
+                summaryHTML = `<strong class="text-yellow-300">휴식이 필요한 날</strong><br>모든 것을 내려놓고 재충전에 집중해야 할 때입니다.`;
+            }
+            document.getElementById('total-score-summary').innerHTML = summaryHTML;
+        },
+
+        updateResultHeader(y, m, d, z, za) {
+            const h = document.getElementById('result-header');
+            h.querySelector('h2').textContent = `${y}년 ${m}월 ${d}일생 님의 종합 운세`;
+            h.querySelector('p').textContent = `${z} | ${za}띠`;
+        },
+        
+        updateCard(id, title, content, advice, score) {
+            const card = document.getElementById(id);
+            let adviceHTML = (id === 'astrology') ? `<div class="advice-box"><p class="text-sm text-yellow-200"><strong class="font-semibold">오늘의 테마:</strong> ${advice.theme}<br><strong class="font-semibold">✨ 행운 아이템:</strong> ${advice.item}<br><strong class="font-semibold">📍 행운 장소:</strong> ${advice.place}<br><strong class="block mt-2 font-semibold">코스믹 조언:</strong> ${advice.desc}</p></div>`
+                                                 : `<div class="advice-box"><p class="text-sm text-yellow-200"><strong class="font-semibold">${advice.title}</strong><br>${advice.desc}</p></div>`;
+            card.innerHTML = `<div class="flex justify-between items-start gap-2"><div class="flex-grow"><h3 class="text-xl font-bold truncate">${title}</h3></div><div class="flex flex-col items-end flex-shrink-0"><span class="text-2xl font-bold text-yellow-300">${score.toFixed(1)}</span><span class="text-xs text-gray-400 -mt-1">/ 10점</span></div></div><p class="mt-2 text-gray-300 text-sm">${content}</p>${adviceHTML}<div class="flex justify-end mt-2"><button class="info-btn" data-type="${id}" aria-label="정보 보기" style="width:24px; height:24px; font-size:14px;">ⓘ</button></div>`;
+            card.classList.remove('fade-in'); void card.offsetWidth; card.classList.add('fade-in');
+        },
+
+        openModal(type) {
+            const data = FortuneApp.data.explanations[type];
+            if (!data) return;
+            FortuneApp.elements.modalTitle.textContent = data.title;
+            FortuneApp.elements.modalContent.innerHTML = data.content;
+            FortuneApp.elements.infoModal.classList.remove('hidden');
+            setTimeout(() => {
+                FortuneApp.elements.infoModal.querySelector('div').classList.add('scale-100');
+            }, 10);
+        },
+        closeModal() {
+            const modalContentDiv = FortuneApp.elements.infoModal.querySelector('div');
+            modalContentDiv.classList.remove('scale-100');
+            setTimeout(() => {
+                FortuneApp.elements.infoModal.classList.add('hidden');
+            }, 200);
+        },
+        handleResultCardClick(event) {
+            const btn = event.target.closest('.info-btn');
+            if (btn) {
+                this.openModal(btn.dataset.type);
+            }
+        },
+        
+        getNumerologyScore(lifePathNumber, todayNumber) { return FortuneApp.data.numerologyHarmony[todayNumber - 1][lifePathNumber - 1]; },
+        getZodiacScore(userZodiac, dailyZodiac) { return FortuneApp.data.zodiacData.harmony[userZodiac]?.[dailyZodiac] || 5.0; },
+        getAstrologyScore(userSign, moonPhase) { const userElement = FortuneApp.data.astrologyData.elements[userSign]; return FortuneApp.data.astrologyData.moonScores[moonPhase.name]?.[userElement] || 5.0; },
+        getBirthSymbolScore(birthMonth, currentSeason) { const birthSeason = this.getSeasonByMonth(birthMonth); if (birthSeason === currentSeason) return 9.3; const oppositeSeason = { '봄':'가을', '여름':'겨울', '가을':'봄', '겨울':'여름' }; return (oppositeSeason[birthSeason] === currentSeason) ? 3.2 : 6.5; },
+        calculateLifePathNumber(year, month, day) { let sum = ('' + year + month + day).split('').reduce((acc, digit) => acc + parseInt(digit, 10), 0); while (sum > 9) { sum = ('' + sum).split('').reduce((acc, digit) => acc + parseInt(digit, 10), 0); } return sum; },
+        getZodiacSign(month, day) { const signs = [ { sign: "염소자리", start: [12, 25], end: [1, 19] }, { sign: "물병자리", start: [1, 20], end: [2, 18] }, { sign: "물고기자리", start: [2, 19], end: [3, 20] }, { sign: "양자리", start: [3, 21], end: [4, 19] }, { sign: "황소자리", start: [4, 20], end: [5, 20] }, { sign: "쌍둥이자리", start: [5, 21], end: [6, 21] }, { sign: "게자리", start: [6, 22], end: [7, 22] }, { sign: "사자자리", start: [7, 23], end: [8, 22] }, { sign: "처녀자리", start: [8, 23], end: [9, 23] }, { sign: "천칭자리", start: [9, 24], end: [10, 22] }, { sign: "전갈자리", start: [10, 23], end: [11, 22] }, { sign: "사수자리", start: [11, 23], end: [12, 24] } ]; const sign = signs.find(s => (month === s.start[0] && day >= s.start[1]) || (month === s.end[0] && day <= s.end[1]) ); return sign ? sign.sign : "염소자리"; },
+        getChineseZodiac(year) { return FortuneApp.data.zodiacData.animals[(year - 4 + 12) % 12]; },
+        getDailyZodiac(date) { const refDate = new Date('2024-02-10'); const diff = Math.floor((date - refDate) / (1000 * 60 * 60 * 24)); const dailyZodiacIndex = (diff % 12 + 12) % 12; const dailyZodiacOrder = ['용', '뱀', '말', '양', '원숭이', '닭', '개', '돼지', '쥐', '소', '호랑이', '토끼']; return dailyZodiacOrder[dailyZodiacIndex]; },
+        getMoonPhase(date) { const LUNAR_CYCLE = 29.530588853; const refNewMoon = new Date('2024-02-10'); const daysSinceNewMoon = ((date - refNewMoon) / (1000 * 60 * 60 * 24)) % LUNAR_CYCLE; if (daysSinceNewMoon < 1.84) return {name: '그믐달'}; if (daysSinceNewMoon < 5.53) return {name: '초승달'}; if (daysSinceNewMoon < 12.91) return {name: '상현달'}; if (daysSinceNewMoon < 16.61) return {name: '보름달'}; if (daysSinceNewMoon < 23.99) return {name: '하현달'}; return {name: '그믐달'}; },
+        getCurrentSeason(date) { return this.getSeasonByMonth(date.getMonth() + 1); },
+        getSeasonByMonth(month) { if (month >= 3 && month <= 5) return '봄'; if (month >= 6 && month <= 8) return '여름'; if (month >= 9 && month <= 11) return '가을'; return '겨울'; },
+        getZodiacRelation(userZodiac, dailyZodiac) { if (userZodiac === dailyZodiac) return {type:'same', text:'보통'}; const score = this.getZodiacScore(userZodiac, dailyZodiac); if (score >= 9.9) return {type:'best', text:'아주 좋은(육합)'}; if (score >= 9.0) return {type:'good', text:'좋은(삼합)'}; if (score <= 2.5) return {type:'bad', text:'부딪히는(충)'}; if (score <= 4.0) return {type:'soso', text:'불편한(원진)'}; return {type:'normal', text:'그럭저럭한'}; },
+        
+        createSeededRandom(seed) {
+            let currentSeed = seed;
+            return function() {
+                currentSeed = (currentSeed * 9301 + 49297) % 233280;
+                return currentSeed / 233280;
+            };
+        },
+        getRandomElement(arr, randomFunc) {
+            return arr[Math.floor(randomFunc() * arr.length)];
+        },
+        generateNumerologyAdvice(userNum, dayNum, randomFunc) {
+            const keywords = FortuneApp.data.adviceKeywords.numerology;
+            const userKeyword = keywords.numbers[userNum];
+            const dayKeyword = keywords.numbers[dayNum];
+            const structure = this.getRandomElement(keywords.structures, randomFunc);
+            const desc = structure
+                .replace('{userKeyword}', userKeyword.name)
+                .replace('{dayKeyword}', dayKeyword.name)
+                .replace('{userAction}', this.getRandomElement(userKeyword.actions, randomFunc))
+                .replace('{dayAction}', this.getRandomElement(dayKeyword.actions, randomFunc));
+            return { title: `숫자의 메시지: ${userKeyword.name} & ${dayKeyword.name}`, desc: desc };
+        },
+        generateAstrologyAdvice(sign, moonPhase, lifePathNumber, randomFunc) {
+            const keywords = FortuneApp.data.adviceKeywords.astrology;
+            const astrologyData = FortuneApp.data.astrologyData;
+            let lifeFocusType;
+            if ([1, 5, 8].includes(lifePathNumber)) lifeFocusType = 'Action';
+            else if ([2, 6, 9].includes(lifePathNumber)) lifeFocusType = 'Connection';
+            else lifeFocusType = 'Growth';
+            const lifeFocusData = keywords.lifeFocus[lifeFocusType];
+            const zodiacElement = astrologyData.elements[sign];
+            const desc = keywords.cosmicAdvice[zodiacElement]?.[lifeFocusType] || "오늘 하루, 당신의 특별한 잠재력을 발견해보세요.";
+            const moonData = keywords.moons[moonPhase.name];
+            const theme = `${moonData.prefix} ${lifeFocusData.name}`;
+            const signThemeData = this.getRandomElement(keywords.signs[sign].themes, randomFunc);
+            const itemPool = [...lifeFocusData.items, ...signThemeData.items, ...keywords.generic.items];
+            const placePool = [...lifeFocusData.places, ...signThemeData.places, ...keywords.generic.places];
+            const item = this.getRandomElement(itemPool, randomFunc);
+            const place = this.getRandomElement(placePool, randomFunc);
+            return { theme, item, place, desc };
+        },
+        generateZodiacAdvice(userAnimal, dayAnimal, randomFunc) {
+            const keywords = FortuneApp.data.adviceKeywords.zodiac;
+            const relation = this.getZodiacRelation(userAnimal, dayAnimal);
+            const userKWData = keywords.animals[userAnimal];
+            const dayKWData = keywords.animals[dayAnimal];
+            const relationKW = keywords.relations[relation.type];
+            const title = `오늘의 인연: ${relationKW.title}`;
+            const structure = this.getRandomElement(relationKW.structures, randomFunc);
+            const action = this.getRandomElement(relationKW.actions, randomFunc);
+            const descPart1 = structure
+                .replace('{userKeyword}', this.getRandomElement(userKWData.keywords, randomFunc))
+                .replace('{dayKeyword}', this.getRandomElement(dayKWData.keywords, randomFunc))
+                .replace('{userAnimal}', userAnimal)
+                .replace('{dayAnimal}', dayAnimal);
+            const descPart2 = action.replace('{dayAnimal}', dayAnimal);
+            const finalDesc = `${descPart1} <br><strong class='mt-2 block'>행동 조언:</strong> ${descPart2}`;
+            return { title, desc: finalDesc };
+        },
+        generateSymbolAdvice(birthSeason, currentSeason, birthMonth, randomFunc) {
+            const keywords = FortuneApp.data.adviceKeywords.symbol;
+            const birthKW = keywords.seasons[birthSeason];
+            const stoneKW = keywords.birthstones[birthMonth];
+            let relationType;
+            if (birthSeason === currentSeason) relationType = 'match';
+            else if (keywords.opposites[birthSeason] === currentSeason) relationType = 'opposite';
+            else relationType = 'adjacent';
+            const relationKW = keywords.relations[relationType];
+            const title = `계절과 탄생석의 조화`;
+            const desc = this.getRandomElement(relationKW.structures, randomFunc)
+                .replace('{birthPhrase}', this.getRandomElement(birthKW.phrases, randomFunc))
+                .replace('{currentSeason}', currentSeason)
+                .replace('{birthstone}', stoneKW.name)
+                .replace('{stoneKeyword}', stoneKW.keyword);
+            return { title, desc };
+        },
+        
+        calculateShinsal(userZodiac, dailyZodiac) {
+            const group = FortuneApp.data.shinsalData.groups[userZodiac];
+            if (!group) return null;
+
+            const shinsalTrigger = FortuneApp.data.shinsalData.triggers[group];
+            for (const sal in shinsalTrigger) {
+                if (shinsalTrigger[sal] === dailyZodiac) {
+                    return FortuneApp.data.shinsalData.descriptions[sal];
+                }
+            }
+            return null;
+        },
+
+        updateSpecialEnergyCard(shinsal) {
+            const card = FortuneApp.elements.specialEnergyCard;
+            if (shinsal) {
+                card.innerHTML = `
+                    <div class="flex justify-between items-center">
+                        <h3 class="text-xl font-bold">${shinsal.icon} ${shinsal.name}</h3>
+                        <button class="info-btn" data-type="shinsal" aria-label="정보 보기" style="width:24px; height:24px; font-size:14px;">ⓘ</button>
+                    </div>
+                    <p class="mt-2 text-gray-300 text-sm">${shinsal.description}</p>
+                    <div class="advice-box">
+                        <p class="text-sm text-yellow-200"><strong class="font-semibold">행동 조언:</strong> ${shinsal.advice}</p>
+                    </div>
+                `;
+                card.classList.remove('hidden');
+            } else {
+                card.classList.add('hidden');
+            }
+        },
+
+        calculateHourlyFortunes(userZodiac) {
+            const hourlyAnimals = ['쥐', '소', '호랑이', '토끼', '용', '뱀', '말', '양', '원숭이', '닭', '개', '돼지'];
+            const timeRanges = ['23:30-01:29', '01:30-03:29', '03:30-05:29', '05:30-07:29', '07:30-09:29', '09:30-11:29', '11:30-13:29', '13:30-15:29', '15:30-17:29', '17:30-19:29', '19:30-21:29', '21:30-23:29'];
+            
+            return hourlyAnimals.map((animal, index) => {
+                const score = this.getZodiacScore(userZodiac, animal);
+                let color;
+                if (score >= 9.0) color = 'bg-green-400';
+                else if (score >= 7.0) color = 'bg-blue-400';
+                else if (score >= 5.0) color = 'bg-gray-400';
+                else if (score >= 3.0) color = 'bg-orange-400';
+                else color = 'bg-red-400';
+                
+                return {
+                    time: timeRanges[index],
+                    animal: animal,
+                    score: score,
+                    color: color
+                };
+            });
+        },
+
+        updateHourlyFortuneCard(hourlyFortunes) {
+            const card = FortuneApp.elements.hourlyFortuneCard;
+            const chartHTML = hourlyFortunes.map(h => `
+                <div class="hourly-bar-wrapper" title="${h.animal} (${h.time})\n점수: ${h.score.toFixed(1)}">
+                    <div class="hourly-bar ${h.color}" style="height: ${h.score * 10}px;"></div>
+                    <span class="mt-1">${h.animal}</span>
+                </div>
+            `).join('');
+
+            card.innerHTML = `
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-xl font-bold">🕰️ 시간대별 행운 가이드</h3>
+                    <button class="info-btn" data-type="hourly" aria-label="정보 보기" style="width:24px; height:24px; font-size:14px;">ⓘ</button>
+                </div>
+                <div class="hourly-chart">${chartHTML}</div>
+            `;
+        },
+
+        generateIntegratedTheme(userZodiac, lifePathNumber, randomFunc) {
+            const themeData = FortuneApp.data.adviceKeywords.integratedTheme;
+            const zodiacInfo = themeData.zodiac[userZodiac];
+            const numerologyInfo = themeData.numerology[lifePathNumber];
+            
+            const zodiacSubKeyword = this.getRandomElement(zodiacInfo.subKeywords, randomFunc);
+            const numerologySubKeyword = this.getRandomElement(numerologyInfo.subKeywords, randomFunc);
+
+            const interaction = themeData.alchemy[zodiacInfo.type][numerologyInfo.type];
+            
+            const theme = interaction.theme
+                .replace('{zodiacAdjective}', zodiacSubKeyword.adjective)
+                .replace('{zodiacNoun}', zodiacSubKeyword.noun)
+                .replace('{numberAdjective}', numerologySubKeyword.adjective)
+                .replace('{numberNoun}', numerologySubKeyword.noun);
+            
+            const description = this.getRandomElement(interaction.descriptions, randomFunc)
+                .replace('{zodiacKeyword}', `${zodiacSubKeyword.adjective} ${zodiacSubKeyword.noun}`)
+                .replace('{numberKeyword}', `${numerologySubKeyword.adjective} ${numerologySubKeyword.noun}`);
+
+            return { 
+                theme, 
+                description,
+                zodiacKeyword: `${zodiacSubKeyword.adjective} ${zodiacSubKeyword.noun}`,
+                numberKeyword: `${numerologySubKeyword.adjective} ${numerologySubKeyword.noun}`
+            };
+        },
+
+        updateIntegratedThemeCard(themeData) {
+            const card = FortuneApp.elements.integratedThemeCard;
+            card.innerHTML = `
+                <div class="flex justify-between items-center">
+                    <h3 class="text-xl font-bold">오늘의 통합 테마</h3>
+                    <button class="info-btn" data-type="theme" aria-label="정보 보기" style="width:24px; height:24px; font-size:14px;">ⓘ</button>
+                </div>
+                <div class="text-center mt-4">
+                    <p class="text-2xl font-bold text-yellow-300">"${themeData.theme}"</p>
+                    <div class="flex items-center justify-center gap-2 mt-3">
+                        <span class="theme-keyword-box">${themeData.zodiacKeyword}</span>
+                        <span class="text-xl font-bold text-gray-400">+</span>
+                        <span class="theme-keyword-box">${themeData.numberKeyword}</span>
+                    </div>
+                </div>
+                <p class="mt-4 text-center text-gray-300 text-sm">${themeData.description}</p>
+            `;
+        },
+
+        fillDataObjects() {
+            Object.assign(FortuneApp.data, JSON.parse(JSON.stringify(originalData)));
+        },
+
+        shareResult() {
+            const score = FortuneApp.state.totalScore.toFixed(1);
+            const textToCopy = `✨ 저의 오늘 운세 점수는 10점 만점에 ${score}점이에요! \n여러분도 재미로 오늘의 운세를 확인해보세요! 👇\n\n${window.location.href}`;
+            
+            const textarea = document.createElement('textarea');
+            textarea.value = textToCopy;
+            document.body.appendChild(textarea);
+            textarea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textarea);
+
+            const originalText = FortuneApp.elements.shareBtn.textContent;
+            FortuneApp.elements.shareBtn.textContent = '✅ 복사 완료!';
+            FortuneApp.elements.shareBtn.classList.add('copied');
+
+            setTimeout(() => {
+                FortuneApp.elements.shareBtn.textContent = originalText;
+                FortuneApp.elements.shareBtn.classList.remove('copied');
+            }, 2000);
+        }
+    },
+    
+    init() {
+        const today = new Date();
+        const yyyy = today.getFullYear();
+        const mm = String(today.getMonth() + 1).padStart(2, '0');
+        const dd = String(today.getDate()).padStart(2, '0');
+        this.elements.birthdateInput.max = `${yyyy}-${mm}-${dd}`;
+        this.elements.birthdateInput.value = '1992-07-15';
+        
+        this.methods.fillDataObjects();
+        
+        this.elements.calculateBtn.addEventListener('click', () => this.methods.displayFortunes.call(this.methods));
+        this.elements.guideBtn.addEventListener('click', () => this.methods.openModal('guide'));
+        this.elements.resultsDiv.addEventListener('click', (e) => this.methods.handleResultCardClick.call(this.methods, e));
+        this.elements.closeModalBtn.addEventListener('click', () => this.methods.closeModal());
+        this.elements.infoModal.addEventListener('click', (e) => { if (e.target === this.elements.infoModal) this.methods.closeModal(); });
+        this.elements.shareBtn.addEventListener('click', () => this.methods.shareResult());
+        
+        this.methods.displayFortunes.call(this.methods);
+    }
+};
+
+// 원본 데이터 객체
+const originalData = {
+    explanations: {
+        'guide': { title: "운세 계산기 원리", content: `<p class="mb-4">이 계산기는 동서양의 다양한 운세 원리를 종합하여 <strong>당신만을 위한 오늘의 특별한 메시지</strong>를 만들어냅니다. 아래 각 항목을 클릭하여 자세한 원리를 확인해보세요.</p><details class="guide-item mb-2"><summary>🔮 7가지 운세 엔진의 조화</summary><div>저희 계산기는 7가지 서로 다른 운세 분석 엔진을 동시에 가동하여 그 결과를 종합합니다.<br>- <strong>[New in v5.0] 절차적 통합 테마:</strong> 수만가지 조합으로 생성되는 하루의 핵심 미션<br>- <strong>수호 숫자:</strong> 당신의 고유한 기운<br>- <strong>띠:</strong> 사회적 관계와 오늘의 인연<br>- <strong>별자리:</strong> 우주의 흐름과 당신의 관계<br>- <strong>탄생 상징:</strong> 자연의 기운과 당신의 조화<br>- <strong>십이신살:</strong> 오늘의 특별한 작용력<br>- <strong>시간대별 운세:</strong> 하루의 리듬 가이드</div></details><details class="guide-item mb-2"><summary>🔢 각 운세 지수는 어떻게 계산될까요?</summary><div><strong>[v2.4] 가중치 시스템 도입!</strong><br>단순 평균이 아닌, 각 운세의 중요도에 따라 가중치를 적용하여 점수를 계산합니다.<br><strong>- 핵심 운세 (70%):</strong> 수호 숫자(35%) + 띠(35%)<br><strong>- 흐름 운세 (30%):</strong> 별자리(20%) + 탄생상징(10%)<br>이를 통해 좋은 날과 주의가 필요한 날이 더 현실적인 빈도로 나타나게 됩니다.</div></details><details class="guide-item"><summary>🍀 행운의 로또 번호, 그 비밀은?</summary><div>추천되는 로또 번호는 완전한 무작위가 아닙니다. 당신의 생년월일과 오늘의 운세 점수를 '씨앗(Seed)' 값으로 사용하여, 당신의 운세 기운이 담긴 의미 있는 번호를 생성합니다.<br><br><strong>※ 행운의 로또 추천 번호는 통합 점수 8.0점 이상이거나, 4가지 운세 중 하나라도 9.5점 이상일 때 제공됩니다.</strong></div></details>` },
+        'numerology': { title: "수호 숫자 원리 (가중치 35%)", content: "수비학(Numerology) 원리에 따라, 개인의 '탄생수'와 특정 날의 '일일수' 사이의 조화를 점수로 환산합니다. 당신의 고유한 기운을 나타내는 핵심 운세이므로 가장 높은 가중치가 부여됩니다." },
+        'astrology': { title: "별자리 원리 (가중치 20%)", content: "서양 점성술에서는 12 별자리를 불, 흙, 공기, 물의 4가지 원소로 분류합니다. 이 점수는 당신 별자리의 원소와 그날그날 달라지는 '달의 위상'의 조화도를 나타냅니다. 매일 변하는 흐름 운세이므로 20%의 가중치를 가집니다." },
+        'chinese-zodiac': { title: "띠별 원리 (가중치 35%)", content: "동양 역학의 십이간지 이론을 바탕으로 합니다. 당신의 띠와 매일 달라지는 그날의 띠(일진) 사이에는 다양한 관계가 존재합니다. 당신의 사회적 관계를 나타내는 핵심 운세이므로 가장 높은 가중치가 부여됩니다." },
+        'birth-symbol': { title: "탄생 상징 원리 (가중치 10%)", content: "당신이 태어난 달의 계절적 속성과 현재 계절의 기운이 얼마나 조화를 이루는지를 나타냅니다. 자연의 큰 흐름을 나타내므로 10%의 가중치를 가집니다." },
+        'shinsal': { title: "십이신살(十二神殺) 원리", content: "십이신살은 당신의 띠(年支)와 오늘의 띠(日辰)가 만나 발생되는 특별한 에너지의 작용을 분석하는 동양 역학의 심화 이론입니다. 12가지 신살 중, 현대적으로 의미가 깊고 일상에 영향을 미치는 4가지 핵심 신살(도화, 역마, 화개, 장성)을 분석하여 오늘의 특별한 기운을 알려드립니다." },
+        'hourly': { title: "시간대별 운세 원리", content: "하루는 12개의 시간대(자시, 축시, 인시...)로 나뉘며, 각 시간대는 고유한 띠의 기운을 가집니다. 이 시간의 기운과 당신의 띠의 조화도를 분석하여, 하루 중 언제가 당신에게 유리하고 언제가 불리한지 알려주는 실용적인 가이드입니다." },
+        'theme': { 
+            title: "오늘의 통합 테마 가이드", 
+            content: `<p class="mb-4">오늘의 통합 테마는 당신의 하루를 관통하는 핵심 미션이자 가장 중요한 에너지의 흐름을 알려주는 나침반입니다. 이 테마는 당신의 고유한 두 가지 기운이 만나 만들어집니다.</p><details class="guide-item mb-2"><summary>🔑 첫 번째 키워드: 띠 에너지</summary><div><p>당신이 세상과 소통하고 행동하는 방식, 즉 <strong>'사회적인 페르소나'</strong>를 상징합니다.</p><p class="mt-2 text-xs text-gray-600">예시: '용기있는 돌파'는 오늘 당신이 외부 세계와 관계 맺을 때 용기있게 나아가는 에너지를 사용해야 함을 의미합니다.</p></div></details><details class="guide-item mb-2"><summary>🔑 두 번째 키워드: 수호 숫자 에너지</summary><div><p>당신 내면에 잠재된 고유한 성향과 가능성, 즉 <strong>'내면의 자아'</strong>를 상징합니다.</p><p class="mt-2 text-xs text-gray-600">예시: '독립적인 시작'은 오늘 당신의 내면에서 무언가를 새롭게 시작하려는 독립적인 힘이 솟아나고 있음을 의미합니다.</p></div></details><details class="guide-item mb-2"><summary>✨ 통합 테마의 탄생</summary><div><p>이 두 키워드가 합쳐져 오늘의 통합 테마가 완성됩니다. 각 키워드의 핵심 의미가 융합되어 새로운 미션이 만들어지는 '에너지의 연금술'과 같습니다.</p><p class="mt-2 text-xs text-gray-600">예시: '용기있는 돌파(띠)' + '독립적인 시작(수호 숫자)' = <strong>"용기있는 시작"</strong> 이라는 테마가 탄생합니다. 이는 '세상을 향해 용기있게 돌파하는 에너지로, 내면의 독립적인 시작을 이뤄내라'는 오늘의 미션이 됩니다.</p></div></details><details class="guide-item"><summary>🧭 어떻게 활용할까요?</summary><div><p>오늘 하루 동안 마주하는 모든 일들을 이 '테마'라는 렌즈를 통해 바라보세요. 결정이 필요할 때, 행동이 망설여질 때, 이 테마가 당신의 훌륭한 가이드가 되어줄 것입니다.</p></div></details>` 
+        }
+    },
+    numerologyHarmony: { 1:[9.8,6.5,8.1,3.2,9.3,6.4,2.6,8.3,7.1],2:[6.5,9.7,5.2,9.1,4.4,8.2,7.3,2.9,8.0],3:[8.1,5.2,9.9,4.3,9.0,9.6,1.8,7.4,9.2],4:[3.2,9.1,4.3,9.5,6.7,6.0,8.4,9.8,2.1],5:[9.3,4.4,9.0,6.7,9.4,7.8,5.9,3.8,8.5],6:[6.4,8.2,9.6,6.0,7.8,9.7,4.2,8.6,9.3],7:[2.6,7.3,1.8,8.4,5.9,4.2,9.6,5.1,7.9],8:[8.3,2.9,7.4,9.8,3.8,8.6,5.1,9.9,5.3],9:[7.1,8.0,9.2,2.1,8.5,9.3,7.9,5.3,10.0] },
+    astrologyData: { elements:{'양자리':'불','황소자리':'흙','쌍둥이자리':'공기','게자리':'물','사자자리':'불','처녀자리':'흙','천칭자리':'공기','전갈자리':'물','사수자리':'불','염소자리':'흙','물병자리':'공기','물고기자리':'물'}, moonScores:{'초승달':{'불':9.1,'공기':8.3,'흙':6.5,'물':6.2},'상현달':{'불':8.2,'공기':9.3,'흙':7.1,'물':6.8},'보름달':{'물':9.8,'흙':9.2,'불':4.4,'공기':5.5},'하현달':{'물':9.4,'흙':8.5,'불':7.3,'공기':6.9},'그믐달':{'물':7.8,'흙':6.8,'불':3.1,'공기':2.7}} },
+    zodiacData: { animals:['쥐','소','호랑이','토끼','용','뱀','말','양','원숭이','닭','개','돼지'], harmony:{'쥐':{'소':9.9,'원숭이':9.2,'용':9.1,'말':1.8,'양':3.5,'닭':4.5,'토끼':4.8,'개':6.1,'돼지':7.2,'뱀':6.8,'호랑이':5.2},'소':{'쥐':9.9,'뱀':9.3,'닭':9.2,'양':2.5,'말':3.2,'개':4.4,'토끼':6.3,'용':5.8,'원숭이':7.1,'호랑이':4.9,'돼지':6.9},'호랑이':{'돼지':10,'말':9.4,'개':9.3,'원숭이':2.3,'닭':3.5,'뱀':4.1,'쥐':6.2,'소':4.8,'토끼':7.5,'용':6.8},'토끼':{'개':9.8,'돼지':9.5,'양':9.4,'닭':2.2,'원숭이':3.4,'용':4.3,'쥐':3.7,'소':6.4,'뱀':6.1,'말':7.3},'용':{'닭':9.7,'쥐':9.1,'원숭이':9,'개':2.1,'돼지':3.6,'토끼':4.2,'소':5.7,'호랑이':6.7,'뱀':7.8,'말':6.5},'뱀':{'원숭이':9.6,'소':9.3,'닭':9.3,'돼지':2.6,'개':3.1,'호랑이':4.0,'쥐':6.9,'토끼':6.2,'용':7.7,'말':5.9},'말':{'양':9.9,'호랑이':9.4,'개':9.4,'쥐':1.8,'소':3.1,'닭':4.6,'토끼':7.4,'용':6.6,'뱀':5.8,'원숭이':6.3},'양':{'말':9.9,'토끼':9.5,'돼지':9.5,'소':2.5,'쥐':3.2,'개':4.7,'닭':6.4,'용':5.9,'뱀':6.7,'원숭이':7},'원숭이':{'뱀':9.6,'쥐':9.2,'용':9,'호랑이':2.3,'토끼':3.3,'돼지':4.8,'소':7.2,'닭':8.1,'개':6.6,'말':6.4},'닭':{'용':9.7,'소':9.2,'뱀':9.2,'토끼':2.2,'호랑이':3.4,'말':4.5,'쥐':4.6,'양':6.5,'원숭이':8.2,'개':3.9},'개':{'토끼':9.8,'호랑이':9.3,'말':9.3,'용':2.1,'뱀':3.0,'소':4.3,'쥐':6,'양':4.8,'원숭이':6.5,'닭':3.9},'돼지':{'호랑이':10,'토끼':9.5,'양':9.5,'뱀':2.6,'용':3.7,'원숭이':4.9,'쥐':7.3,'소':7,'닭':6.3,'개':7.8}} },
+    shinsalData: {
+        groups: {'돼지':'해묘미','토끼':'해묘미','양':'해묘미','호랑이':'인오술','말':'인오술','개':'인오술','뱀':'사유축','닭':'사유축','소':'사유축','원숭이':'신자진','쥐':'신자진','용':'신자진'},
+        triggers: {'해묘미':{'도화살':'쥐','역마살':'뱀','화개살':'양','장성살':'토끼'},'인오술':{'도화살':'토끼','역마살':'원숭이','화개살':'개','장성살':'말'},'사유축':{'도화살':'말','역마살':'돼지','화개살':'소','장성살':'닭'},'신자진':{'도화살':'닭','역마살':'호랑이','화개살':'용','장성살':'쥐'}},
+        descriptions: {'도화살':{name:'도화살(桃花煞)',icon:'🌸',description:'나의 매력이 주변을 사로잡는 날입니다. 예상치 못한 만남이나 인연이 찾아올 수 있습니다.',advice:'자신을 꾸미고 새로운 사람들을 만나는 사교 활동에 적극적으로 참여해 보세요.'},'역마살':{name:'역마살(驛馬煞)',icon:'🐴',description:'이동, 변화, 그리고 분주함의 기운이 강한 날입니다. 새로운 환경이나 업무를 접할 수 있습니다.',advice:'정체되어 있기보다, 적극적으로 움직이고 새로운 장소나 일에 도전하는 것이 유리합니다.'},'화개살':{name:'화개살(華蓋煞)',icon:'🎨',description:'예술적 감각, 학문적 깊이, 혹은 종교적 성찰의 기운이 강해지는 날입니다.',advice:'혼자만의 시간을 가지며 창작 활동이나 깊이 있는 공부, 명상 등을 하기에 좋은 날입니다.'},'장성살':{name: '장성살(將星煞)',icon: '👑',description: '리더십, 권력, 그리고 강한 추진력의 기운이 함께하는 날입니다. 목표를 향해 나아갈 힘이 생깁니다.',advice: '자신감을 가지고 그룹을 이끌거나, 목표를 향해 과감하게 돌파하는 모습을 보여주세요.'}}
+    },
+    adviceKeywords: {
+        numerology: { numbers: {1:{name:"시작",actions:["새로운 계획 세우기","리더십 발휘하기","첫걸음을 떼기"]},2:{name:"협력",actions:["주변 사람과 힘을 합치기","균형감각 유지하기","타인의 의견 경청하기"]},3:{name:"표현",actions:["창의적인 아이디어 내기","자신을 솔직하게 드러내기","유머 감각 발휘하기"]},4:{name:"안정",actions:["꼼꼼하게 일 처리하기","현실적인 기반 다지기","규칙적으로 생활하기"]},5:{name:"변화",actions:["새로운 것에 도전하기","자유롭게 행동하기","일상에서 탈출하기"]},6:{name:"책임",actions:["주변 사람들을 챙기기","맡은 일을 완수하기","따뜻한 마음 나누기"]},7:{name:"성찰",actions:["혼자만의 시간 갖기","깊이있게 생각하기","정신적인 성장 추구하기"]},8:{name:"성취",actions:["자신의 능력을 증명하기","실질적인 성과 만들기","대담하게 목표 설정하기"]},9:{name:"완성",actions:["오래된 일 마무리하기","너그러운 마음으로 베풀기","경험을 통해 배우기"]}}, structures: ["오늘은 '{dayKeyword}'의 기운이 당신의 '{userKeyword}' 에너지와 만나는 날입니다. {userAction}와 {dayAction} 사이에서 균형을 찾는 지혜가 필요합니다.","당신의 고유한 '{userKeyword}' 에너지에 오늘의 '{dayKeyword}' 기운이 더해집니다. {dayAction}에 힘쓰면서도, {userAction}를 잊지 않는다면 멋진 하루가 될 거예요.","'{dayKeyword}'의 에너지가 강한 오늘, {dayAction}에 집중해보세요. 그러면서 당신의 장점인 '{userKeyword}'의 힘을 빌려 {userAction}를 시도하면 더욱 좋습니다.","'{userKeyword}'과 '{dayKeyword}'의 에너지가 함께하는 오늘, {userAction}을(를) 통해 {dayAction}까지 이뤄낼 수 있는 특별한 날입니다."] },
+        astrology: { signs:{'양자리':{themes:[{name:"용감한 도전",items:["운동화","에너지 드링크"],places:["헬스장","가보지 않은 길"]}]},'황소자리':{themes:[{name:"감각적인 안정",items:["고급 초콜릿","식물 화분"],places:["맛집","자연"]}]},'쌍둥이자리':{themes:[{name:"지적인 호기심",items:["새로운 책","팟캐스트"],places:["서점","토론 모임"]}]},'게자리':{themes:[{name:"따뜻한 공감",items:["향초","가족 사진"],places:["집","편안한 카페"]}]},'사자자리':{themes:[{name:"화려한 자신감",items:["금색 액세서리","선글라스"],places:["무대","파티"]}]},'처녀자리':{themes:[{name:"섬세한 분석",items:["정리 도구","체크리스트"],places:["도서관","깔끔한 사무실"]}]},'천칭자리':{themes:[{name:"우아한 균형",items:["아름다운 옷","예술 작품"],places:["미술관","사교 모임"]}]},'전갈자리':{themes:[{name:"강렬한 통찰",items:["비밀 일기장","타로 카드"],places:["조용한 바","신비로운 장소"]}]},'사수자리':{themes:[{name:"자유로운 탐험",items:["여행 가방","지도"],places:["공항","넓은 평원"]}]},'염소자리':{themes:[{name:"성실한 야망",items:["손목시계","플래너"],places:["회사","높은 산"]}]},'물병자리':{themes:[{name:"독창적인 혁신",items:["최신 기기","드론"],places:["과학관","발명 동아리"]}]},'물고기자리':{themes:[{name:"몽환적인 감성",items:["카메라","시집"],places:["영화관","바닷가"]}]}}, generic: {items:["다이어리","텀블러"],places:["공원","산책로"]}, moons: {'초승달':{prefix:"새로운 시작의"},'상현달':{prefix:"성장하는"},'보름달':{prefix:"결실을 맺는"},'하현달':{prefix:"정리하는"},'그믐달':{prefix:"성찰하는"}}, lifeFocus: {'Action':{name:'활동',items:['운동화','새 프로젝트 계획서','지도','에너지 드링크','카메라'],places:['헬스장','스타트업 사무실','가보지 않은 길','스포츠 경기장','넓은 평원']},'Connection':{name:'관계',items:['편지지','커플 아이템','선물','꽃다발','요리책'],places:['카페','사교 모임','가족 모임','결혼식장','동호회']},'Growth':{name:'성장',items:['새로운 책','노트와 펜','정리 도구','돋보기','일기장'],places:['도서관','조용한 작업실','연구소','박물관','명상 센터']}}, cosmicAdvice: {'불':{'Action':"당신의 넘치는 열정에 행동력이 더해져, 계획했던 일을 시작하기에 완벽한 날입니다. 망설이지 말고 앞으로 나아가세요.",'Connection':"당신의 뜨거운 열정을 긍정적인 관계 에너지로 전환시켜, 주변 사람들에게 활기를 불어넣고 리더십을 발휘해 보세요.",'Growth':"불타는 열정을 내면으로 돌려, 자신을 성장시킬 새로운 지식이나 기술을 탐구하는 데 사용해 보세요. 놀라운 집중력을 발휘할 수 있습니다."},'흙':{'Action':"당신의 성실함이 실질적인 행동과 만날 때, 목표를 향한 가장 단단한 발판이 마련됩니다. 꾸준함이 결실을 맺는 날입니다.",'Connection':"안정적인 당신의 모습을 바탕으로, 주변 사람들에게 믿음과 신뢰를 주는 든든한 존재가 되어주세요. 당신의 성실함이 최고의 자산입니다.",'Growth':"차분히 앉아 현실적인 계획을 세우고, 당신의 성장을 위한 꾸준한 한 걸음을 내디딜 때입니다. 디테일 속에 답이 있습니다."},'공기':{'Action':"당신의 번뜩이는 아이디어를 현실로 옮길 행동력이 필요한 날입니다. 생각에만 머물지 말고, 직접 부딪혀 보세요.",'Connection':"지적인 대화와 유연한 소통 능력을 발휘하여, 새로운 사람들과의 네트워크를 확장하기 좋은 날입니다. 당신의 유머 감각이 빛을 발합니다.",'Growth':"다양한 정보를 흡수하고 논리적으로 정리하며, 당신의 지적 세계를 한 단계 확장시켜 보세요. 호기심이 당신의 무기입니다."},'물':{'Action':"당신의 깊은 직감과 통찰력이 올바른 행동의 방향을 알려줄 것입니다. 스스로의 감을 믿고 움직이면, 기대 이상의 결과를 얻을 수 있습니다.",'Connection':"당신의 깊은 공감 능력을 바탕으로, 소중한 사람과 감정을 나누며 유대감을 쌓아보세요. 당신의 따뜻함이 빛을 발합니다.",'Growth':"고요히 내면의 목소리에 귀를 기울이며, 감정적인 정화와 정신적인 휴식을 취하기에 좋은 날입니다. 예술적 영감을 따라가세요."}}},
+        zodiac: { animals: {'쥐':{keywords:["지혜","민첩함"]},'소':{keywords:["성실","인내"]},'호랑이':{keywords:["용기","리더십"]},'토끼':{keywords:["섬세함","친화력"]},'용':{keywords:["비범함","야망"]},'뱀':{keywords:["통찰력","신비함"]},'말':{keywords:["자유","열정"]},'양':{keywords:["온화함","창의력"]},'원숭이':{keywords:["재치","사교성"]},'닭':{keywords:["정확함","성실함"]},'개':{keywords:["정의감","신뢰"]},'돼지':{keywords:["긍정","포용력"]}}, relations: {best:{title:"최고의 파트너",structures:["당신의 {userKeyword}과(와) 오늘의 {dayAnimal}띠가 가진 {dayKeyword}이(가) 만나 환상의 시너지를 발휘하는 날입니다."],actions:["오늘은 {dayAnimal}띠와의 협업에서 기대 이상의 성과를 얻을 수 있습니다."]},good:{title:"든든한 조력자",structures:["당신의 {userKeyword}은(는) 오늘 {dayAnimal}띠의 {dayKeyword}을(를) 만나 더욱 빛을 발합니다."],actions:["주변의 {dayAnimal}띠에게 조언을 구하면 문제 해결의 실마리를 찾을 수 있습니다."]},bad:{title:"충돌 주의보",structures:["당신의 {userKeyword}과(와) 오늘의 {dayAnimal}띠의 {dayKeyword}이(가) 부딪히기 쉬운 날입니다."],actions:["사소한 말다툼이 커지지 않도록 감정적인 대응은 피하세요."]},soso:{title:"약간의 어색함",structures:["오늘은 {dayAnimal}띠와의 관계에서 사소한 오해나 불편함이 생길 수 있습니다."],actions:["무리하게 가까워지려 하기보다 적당한 거리를 유지하는 것이 현명합니다."]},same:{title:"나를 비추는 거울",structures:["나와 같은 {dayAnimal}띠를 만나는 오늘, 당신의 장점과 단점을 객관적으로 돌아볼 기회가 생깁니다."],actions:["자신의 모습을 되돌아보고 성찰의 시간으로 삼아보세요."]},normal:{title:"평범한 하루",structures:["오늘은 {dayAnimal}띠와 특별한 시너지나 충돌 없이 무난한 관계를 유지할 수 있습니다."],actions:["현상 유지에 힘쓰며 에너지를 비축하는 날로 삼아보세요."]}}},
+        symbol: { seasons: {'봄':{phrases:["생명력이 넘치는 봄의 에너지를 가진 당신은"]},'여름':{phrases:["태양처럼 뜨거운 열정을 품은 당신의 탄생 계절은"]},'가을':{phrases:["풍요로운 결실을 상징하는 당신의 탄생 계절은"]},'겨울':{phrases:["내면의 힘을 기르는 지혜를 품은 당신의 탄생 계절은"]}}, birthstones: {1:{name:'가넷',keyword:'진실한 우정'},2:{name:'자수정',keyword:'성실과 평화'},3:{name:'아쿠아마린',keyword:'젊음과 용기'},4:{name:'다이아몬드',keyword:'불멸의 사랑'},5:{name:'에메랄드',keyword:'행복과 행운'},6:{name:'진주',keyword:'순결과 부귀'},7:{name:'루비',keyword:'뜨거운 사랑'},8:{name:'페리도트',keyword:'부부의 행복'},9:{name:'사파이어',keyword:'진리와 지혜'},10:{name:'오팔',keyword:'희망과 순수'},11:{name:'토파즈',keyword:'건강과 우정'},12:{name:'터키석',keyword:'성공과 승리'}}, relations: {match:{title:"에너지 최고조",structures:["{birthPhrase}, 오늘 같은 계절의 기운을 만나 잠재력이 폭발합니다. 당신의 탄생석인 {birthstone}이 상징하는 '{stoneKeyword}'의 힘이 그 에너지를 더욱 증폭시킬 것입니다."]},adjacent:{title:"새로운 자극",structures:["{birthPhrase}, 오늘 {currentSeason}의 신선한 기운을 만나 새로운 영감을 얻습니다. 당신의 탄생석 {birthstone}이 '{stoneKeyword}'의 메시지를 더해줄 거예요."]},opposite:{title:"균형과 조화",structures:["{birthPhrase}, 오늘 반대 계절인 {currentSeason}의 기운을 만나 부족한 점을 채우고 균형을 찾습니다. 당신의 탄생석 {birthstone}을 기억하세요."]}}, opposites: {'봄':'가을','여름':'겨울','가을':'봄','겨울':'여름'} },
+        integratedTheme: {
+            zodiac: {
+                '쥐':{type:'Intellect', subKeywords:[{adjective:'지혜로운',noun:'탐구'},{adjective:'민첩한',noun:'판단'},{adjective:'전략적인',noun:'분석'}]},
+                '소':{type:'Stability', subKeywords:[{adjective:'성실한',noun:'축적'},{adjective:'인내하는',noun:'기반'},{adjective:'견고한',noun:'신념'}]},
+                '호랑이':{type:'Action', subKeywords:[{adjective:'용기있는',noun:'돌파'},{adjective:'선구적인',noun:'개척'},{adjective:'대담한',noun:'도전'}]},
+                '토끼':{type:'Connection', subKeywords:[{adjective:'섬세한',noun:'조율'},{adjective:'친화적인',noun:'연결'},{adjective:'상냥한',noun:'보살핌'}]},
+                '용':{type:'Action', subKeywords:[{adjective:'비범한',noun:'창조'},{adjective:'야망있는',noun:'비상'},{adjective:'카리스마',noun:'리더십'}]},
+                '뱀':{type:'Intellect', subKeywords:[{adjective:'통찰력있는',noun:'성찰'},{adjective:'신비로운',noun:'매혹'},{adjective:'치밀한',noun:'계획'}]},
+                '말':{type:'Action', subKeywords:[{adjective:'열정적인',noun:'질주'},{adjective:'자유로운',noun:'모험'},{adjective:'추진력있는',noun:'실행'}]},
+                '양':{type:'Connection', subKeywords:[{adjective:'온화한',noun:'조화'},{adjective:'창의적인',noun:'공감'},{adjective:'평화로운',noun:'안식'}]},
+                '원숭이':{type:'Intellect', subKeywords:[{adjective:'재치있는',noun:'임기응변'},{adjective:'사교적인',noun:'소통'},{adjective:'유쾌한',noun:'아이디어'}]},
+                '닭':{type:'Stability', subKeywords:[{adjective:'정확한',noun:'원칙'},{adjective:'성실한',noun:'결실'},{adjective:'정직한',noun:'신뢰'}]},
+                '개':{type:'Connection', subKeywords:[{adjective:'정의로운',noun:'헌신'},{adjective:'신뢰의',noun:'파트너십'},{adjective:'충성스러운',noun:'보호'}]},
+                '돼지':{type:'Stability', subKeywords:[{adjective:'긍정적인',noun:'포용'},{adjective:'낙천적인',noun:'흐름'},{adjective:'풍요로운',noun:'나눔'}]}
+            },
+            numerology: {
+                1:{type:'Action', subKeywords:[{adjective:'독립적인',noun:'시작'},{adjective:'선도하는',noun:'개척'},{adjective:'진취적인',noun:'결단'}]},
+                2:{type:'Connection', subKeywords:[{adjective:'협력하는',noun:'균형'},{adjective:'외교적인',noun:'중재'},{adjective:'섬세한',noun:'배려'}]},
+                3:{type:'Intellect', subKeywords:[{adjective:'창의적인',noun:'표현'},{adjective:'낙관적인',noun:'영감'},{adjective:'사교적인',noun:'소통'}]},
+                4:{type:'Stability', subKeywords:[{adjective:'안정적인',noun:'구축'},{adjective:'현실적인',noun:'기반'},{adjective:'성실한',noun:'관리'}]},
+                5:{type:'Action', subKeywords:[{adjective:'자유로운',noun:'변화'},{adjective:'모험적인',noun:'탐험'},{adjective:'다재다능한',noun:'적응'}]},
+                6:{type:'Connection', subKeywords:[{adjective:'책임감있는',noun:'조화'},{adjective:'헌신적인',noun:'사랑'},{adjective:'이해심많은',noun:'보살핌'}]},
+                7:{type:'Intellect', subKeywords:[{adjective:'분석적인',noun:'성찰'},{adjective:'지적인',noun:'탐구'},{adjective:'영적인',noun:'깨달음'}]},
+                8:{type:'Action', subKeywords:[{adjective:'권위있는',noun:'성취'},{adjective:'야망있는',noun:'지배'},{adjective:'실질적인',noun:'성공'}]},
+                9:{type:'Connection', subKeywords:[{adjective:'이상적인',noun:'완성'},{adjective:'인도주의적',noun:'나눔'},{adjective:'관대한',noun:'포용'}]}
+            },
+            alchemy: {
+                'Action': {
+                    'Action': { theme: '{zodiacAdjective} {numberNoun}', descriptions: ['타고난 {zodiacKeyword} 에너지에 {numberKeyword}의 힘이 더해져, 목표를 향해 나아갈 힘이 넘치는 날입니다.','두 개의 행동 에너지가 만나 폭발적인 시너지를 냅니다. 망설이지 말고 {numberNoun}하세요.'] },
+                    'Connection': { theme: '따뜻한 리더십', descriptions: ['당신의 {zodiacKeyword}이(가) {numberKeyword}의 힘을 만나 주변을 이끄는 원동력이 됩니다. 독단보다 소통으로 함께 나아가세요.','행동의 에너지가 관계를 만났습니다. 당신의 {zodiacKeyword}으로 {numberKeyword}을 이끌어보세요.'] },
+                    'Intellect': { theme: '{numberAdjective} 돌파', descriptions: ['행동하기 전, 당신의 {zodiacKeyword}에 {numberKeyword}을 더해 더 높은 차원의 성취를 만들어보세요.','단순한 행동이 아닌, {numberKeyword}이 더해진 {zodiacKeyword}으로 문제의 핵심을 꿰뚫어보세요.'] },
+                    'Stability': { theme: '현실적인 도전', descriptions: ['당신의 {zodiacKeyword}이(가) {numberKeyword}을 만날 때, 흔들림 없는 성공을 이룰 수 있습니다. 무모함보다 신중함을 더하세요.','행동력이 안정적인 기반을 만났습니다. 당신의 {zodiacKeyword}을 {numberKeyword} 위에 세워보세요.'] }
+                },
+                'Connection': {
+                    'Action': { theme: '{zodiacAdjective} 동기부여', descriptions: ['당신의 {zodiacKeyword}을 바탕으로 {numberKeyword}에 나선다면, 든든한 지지를 받을 수 있습니다.','관계의 힘이 행동을 이끌어냅니다. {zodiacKeyword}의 힘으로 {numberKeyword}을 시작할 때입니다.'] },
+                    'Connection': { theme: '깊어지는 유대감', descriptions: ['두 개의 관계 에너지가 만나, 사람들과의 유대감이 깊어지고 서로에게 힘이 되어주는 의미있는 하루를 보낼 것입니다.','{zodiacKeyword}과 {numberKeyword}이 만나, 오늘 당신의 관계는 더욱 풍요로워집니다.'] },
+                    'Intellect': { theme: '공감적 소통', descriptions: ['당신의 {zodiacKeyword}이(가) {numberKeyword}을 만나, 관계를 통해 한 단계 성장하는 계기가 될 것입니다.','관계 속에서 지적인 성장을 이룰 때입니다. {numberKeyword}을 통해 {zodiacKeyword}을 실천하세요.'] },
+                    'Stability': { theme: '굳건한 신뢰', descriptions: ['{zodiacKeyword}의 에너지가 {numberKeyword}을 만나 마음의 평화를 얻고, 더 큰 책임을 감당할 힘을 얻게 됩니다.','안정적인 관계 속에서 굳건한 신뢰가 싹틉니다. {zodiacKeyword}과 {numberKeyword}을 함께 이루세요.'] }
+                },
+                'Intellect': {
+                    'Action': { theme: '창의적인 실행', descriptions: ['당신의 {zodiacKeyword}이(가) 과감한 {numberKeyword}을 만나, 아이디어를 현실로 만드는 창조적인 날입니다.','지성이 행동을 만났습니다. 당신의 {zodiacKeyword}을 {numberKeyword}으로 증명해 보이세요.'] },
+                    'Connection': { theme: '즐거운 지식 나눔', descriptions: ['{zodiacKeyword}의 호기심을 {numberKeyword}을 통해 사람들과 나누며, 즐거운 소통 속에서 새로운 영감을 얻게 됩니다.','지적인 교류가 관계를 풍요롭게 합니다. {zodiacKeyword}으로 {numberKeyword}을 실천해보세요.'] },
+                    'Intellect': { theme: '깊이 있는 통찰', descriptions: ['두 개의 지성 에너지가 만나, 복잡한 문제의 본질을 꿰뚫어 볼 수 있는 명료한 하루입니다.','{zodiacKeyword}과 {numberKeyword}이 만나, 정신적인 명료함이 최고조에 달합니다.'] },
+                    'Stability': { theme: '실현 가능한 비전', descriptions: ['당신의 {zodiacKeyword}이(가) {numberKeyword}을 만날 때, 추상적인 아이디어가 실현 가능한 비전으로 완성됩니다.','지성이 현실에 발을 딛습니다. 당신의 {zodiacKeyword}을 {numberKeyword}으로 구체화하세요.'] }
+                },
+                'Stability': {
+                    'Action': { theme: '안정 속의 성장', descriptions: ['당신의 {zodiacKeyword}에 새로운 {numberKeyword}의 기운이 더해져, 안정 속에서 성장을 이룰 수 있습니다.','견고한 기반 위에서 새로운 도전을 시작할 때입니다. {zodiacKeyword}을 바탕으로 {numberKeyword}하세요.'] },
+                    'Connection': { theme: '변함없는 믿음', descriptions: ['당신의 {zodiacKeyword}이(가) 주변 사람들에게 {numberKeyword}을 주어, 더 깊고 단단한 관계를 만들게 됩니다.','안정적인 에너지가 관계를 만났습니다. {zodiacKeyword}을 통해 {numberKeyword}을 보여주세요.'] },
+                    'Intellect': { theme: '현명한 계획', descriptions: ['당신의 {zodiacKeyword}에 {numberKeyword}이 더해져, 장기적인 안목으로 미래를 계획할 수 있습니다.','현실 감각에 지적인 통찰력이 더해집니다. {zodiacKeyword}과 {numberKeyword}으로 미래를 그리세요.'] },
+                    'Stability': { theme: '내실을 다지는 하루', descriptions: ['두 개의 안정적인 기운이 서로 만나, 모든 것을 굳건히 다지고 내실을 채우는 하루입니다.','{zodiacKeyword}과 {numberKeyword}이 만나, 오늘은 흔들림 없이 당신의 기반을 다지는 날입니다.'] }
+                }
+            }
+        }
+    }
+};
+
+// 앱 실행
+FortuneApp.init();
+</script>
+
+</body>
+</html>
