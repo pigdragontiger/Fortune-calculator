@@ -8,6 +8,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/junghun-calendar/dist/junghun-calendar.umd.js"></script>
     <style>
         body { font-family: 'Noto Sans KR', sans-serif; }
         .fade-in { animation: fadeIn 0.8s ease-in-out; }
@@ -391,22 +392,19 @@ const FortuneApp = {
         getZodiacSign(month, day) { const signs = [ { sign: "염소자리", start: [12, 25], end: [1, 19] }, { sign: "물병자리", start: [1, 20], end: [2, 18] }, { sign: "물고기자리", start: [2, 19], end: [3, 20] }, { sign: "양자리", start: [3, 21], end: [4, 19] }, { sign: "황소자리", start: [4, 20], end: [5, 20] }, { sign: "쌍둥이자리", start: [5, 21], end: [6, 21] }, { sign: "게자리", start: [6, 22], end: [7, 22] }, { sign: "사자자리", start: [7, 23], end: [8, 22] }, { sign: "처녀자리", start: [8, 23], end: [9, 23] }, { sign: "천칭자리", start: [9, 24], end: [10, 22] }, { sign: "전갈자리", start: [10, 23], end: [11, 22] }, { sign: "사수자리", start: [11, 23], end: [12, 24] } ]; const sign = signs.find(s => (month === s.start[0] && day >= s.start[1]) || (month === s.end[0] && day <= s.end[1]) ); return sign ? sign.sign : "염소자리"; },
     getChineseZodiac(year) { return this.data.zodiacData.animals[(year - 4 + 12) % 12]; },
         getDailyZodiac(date) {
-            const anchorDate = new Date('2025-07-18T00:00:00Z'); 
-            const anchorZodiacIndex = 0; // '쥐'
-            const zodiacOrder = ['쥐', '소', '호랑이', '토끼', '용', '뱀', '말', '양', '원숭이', '닭', '개', '돼지'];
-            const targetDate = new Date(date);
-            targetDate.setUTCHours(0, 0, 0, 0);
-            const diffInMs = targetDate - anchorDate;
-            const diffInDays = Math.round(diffInMs / (1000 * 60 * 60 * 24));
-            const dailyZodiacIndex = (anchorZodiacIndex + diffInDays % 12 + 12) % 12;
-            console.log('일진 계산 디버그:', {
-                anchorDate: anchorDate.toISOString(),
-                targetDate: targetDate.toISOString(),
-                diffInDays: diffInDays,
-                dailyZodiacIndex: dailyZodiacIndex,
-                result: zodiacOrder[dailyZodiacIndex]
-            });
-            return zodiacOrder[dailyZodiacIndex];
+            if (!window.junghunCalendar || !window.junghunCalendar.getGanji) {
+                console.error('junghunCalendar 라이브러리가 로드되지 않았습니다.');
+                return '알수없음';
+            }
+            const yyyy = date.getFullYear();
+            const mm = date.getMonth() + 1;
+            const dd = date.getDate();
+            const ganji = window.junghunCalendar.getGanji(yyyy, mm, dd);
+            const zodiacMap = {
+              '자': '쥐', '축': '소', '인': '호랑이', '묘': '토끼', '진': '용', '사': '뱀',
+              '오': '말', '미': '양', '신': '원숭이', '유': '닭', '술': '개', '해': '돼지'
+            };
+            return zodiacMap[ganji.day.jiji] || ganji.day.jijiKor || '알수없음';
         },
         getMoonPhase(date) { const LUNAR_CYCLE = 29.530588853; const refNewMoon = new Date('2024-02-10'); const daysSinceNewMoon = ((date - refNewMoon) / (1000 * 60 * 60 * 24)) % LUNAR_CYCLE; if (daysSinceNewMoon < 1.84) return {name: '그믐달'}; if (daysSinceNewMoon < 5.53) return {name: '초승달'}; if (daysSinceNewMoon < 12.91) return {name: '상현달'}; if (daysSinceNewMoon < 16.61) return {name: '보름달'}; if (daysSinceNewMoon < 23.99) return {name: '하현달'}; return {name: '그믐달'}; },
         getCurrentSeason(date) { return this.getSeasonByMonth(date.getMonth() + 1); },
@@ -527,14 +525,22 @@ const FortuneApp = {
         },
         generateZodiacAdvice(userAnimal, dayAnimal, score, randomFunc) {
         const keywords = this.data.adviceKeywords.zodiac;
-            const relation = this.getZodiacRelation(userAnimal, dayAnimal);
-            const userAnimalData = keywords.animals[userAnimal];
-            const dayAnimalData = keywords.animals[dayAnimal];
-            const relationData = keywords.relations[relation.type];
+        const relation = this.getZodiacRelation(userAnimal, dayAnimal);
+        const userAnimalData = keywords.animals[userAnimal];
+        const dayAnimalData = keywords.animals[dayAnimal];
+        const relationData = keywords.relations[relation.type];
 
-            const greeting = userAnimalData.greeting;
-            const relationTitle = relationData.title;
-            const intro = `오늘은 '${dayAnimal}의 날'로, 당신의 띠와 '${relation.text}' 관계를 이루며 ${score.toFixed(1)}점의 궁합을 자랑합니다! 오늘의 인연은 바로 당신의 **'${relationTitle}'**${this.getKoreanParticle(relationTitle, '이/가')} 될 거예요.`;
+        // 방어 코드 추가
+        if (!userAnimalData || !dayAnimalData || !relationData) {
+            return {
+                title: "띠 정보 없음",
+                desc: "오늘의 띠 정보를 불러올 수 없습니다. 네트워크 상태를 확인하거나 새로고침 해보세요."
+            };
+        }
+
+        const greeting = userAnimalData.greeting;
+        const relationTitle = relationData.title;
+        const intro = `오늘은 '${dayAnimal}의 날'로, 당신의 띠와 '${relation.text}' 관계를 이루며 ${score.toFixed(1)}점의 궁합을 자랑합니다! 오늘의 인연은 바로 당신의 **'${relationTitle}'**${this.getKoreanParticle(relationTitle, '이/가')} 될 거예요.`;
 
         const userTrait = userAnimalData.trait;
         const dayTrait = dayAnimalData.trait;
@@ -877,14 +883,12 @@ const FortuneApp = {
         const harmony = this.data.zodiacData.harmony[todayZodiac];
         const animals = this.data.zodiacData.animals;
         const groups = {
-            best: [], // 아주 좋은(육합)
-            good: [], // 좋은(삼합)
-            bad: [],  // 충
-            soso: [], // 원진
-            normal: [] // 그럭저럭한
+            best: [], good: [], bad: [], soso: [], normal: []
         };
+        // 방어 코드 추가
+        if (!harmony) return groups;
         for (const animal of animals) {
-            if (animal === todayZodiac) continue; // 자기 자신 제외
+            if (animal === todayZodiac) continue;
             const score = harmony[animal] || 5.0;
             if (score >= 9.9) groups.best.push(animal);
             else if (score >= 9.0) groups.good.push(animal);
@@ -894,8 +898,10 @@ const FortuneApp = {
         }
         return groups;
     },
-    // --- 오늘의 띠 궁합 흐름 UI 생성 함수 ---
     getTodayZodiacRelationFlowHTML(todayZodiac) {
+        if (!this.data.zodiacData.harmony[todayZodiac]) {
+            return `<div class='mb-4 p-3 rounded-xl bg-yellow-900/40 border border-yellow-700 text-center text-red-200'>오늘의 띠 정보를 불러올 수 없습니다.<br>네트워크 상태를 확인하거나 새로고침 해보세요.</div>`;
+        }
         const groups = this.getTodayZodiacRelationFlow(todayZodiac);
         const emoji = this.data.zodiacEmojis;
         let html = `<div class='mb-4 p-3 rounded-xl bg-yellow-900/40 border border-yellow-700'>`;
@@ -1514,6 +1520,14 @@ FortuneApp.init(fortuneData);
 // 공유 메시지 생성 함수 예시
 function getShareText(score) {
     return `오늘의 운세, 친구랑 같이 보면 기쁨도 두 배! 🍀\n\n✨ 내 운세 점수는 10점 만점에 ${score}점! 오늘은 왠지 좋은 일이 가득할 것 같은 예감이에요.\n혹시 궁금하다면, 당신의 오늘 운세도 살짝 들여다보세요! 👀\n\n👇 여기서 바로 확인!\n공유 URL : ${window.location.href}`;
+}
+
+// 한국 시간(KST) 기준 날짜 반환 함수 추가
+function getKoreaDate(date = new Date()) {
+    const koreaOffset = 9 * 60; // 분 단위
+    const local = new Date(date.getTime() + (date.getTimezoneOffset() + koreaOffset) * 60000);
+    local.setHours(0, 0, 0, 0);
+    return local;
 }
 
 </script>
