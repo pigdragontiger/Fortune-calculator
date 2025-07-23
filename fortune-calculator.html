@@ -392,19 +392,25 @@ const FortuneApp = {
         getZodiacSign(month, day) { const signs = [ { sign: "염소자리", start: [12, 25], end: [1, 19] }, { sign: "물병자리", start: [1, 20], end: [2, 18] }, { sign: "물고기자리", start: [2, 19], end: [3, 20] }, { sign: "양자리", start: [3, 21], end: [4, 19] }, { sign: "황소자리", start: [4, 20], end: [5, 20] }, { sign: "쌍둥이자리", start: [5, 21], end: [6, 21] }, { sign: "게자리", start: [6, 22], end: [7, 22] }, { sign: "사자자리", start: [7, 23], end: [8, 22] }, { sign: "처녀자리", start: [8, 23], end: [9, 23] }, { sign: "천칭자리", start: [9, 24], end: [10, 22] }, { sign: "전갈자리", start: [10, 23], end: [11, 22] }, { sign: "사수자리", start: [11, 23], end: [12, 24] } ]; const sign = signs.find(s => (month === s.start[0] && day >= s.start[1]) || (month === s.end[0] && day <= s.end[1]) ); return sign ? sign.sign : "염소자리"; },
     getChineseZodiac(year) { return this.data.zodiacData.animals[(year - 4 + 12) % 12]; },
         getDailyZodiac(date) {
-            if (!window.junghunCalendar || !window.junghunCalendar.getGanji) {
-                console.error('junghunCalendar 라이브러리가 로드되지 않았습니다.');
-                return '알수없음';
+            const tiangan = ['갑','을','병','정','무','기','경','신','임','계'];
+            const dizhi = ['자','축','인','묘','진','사','오','미','신','유','술','해'];
+            const ganji60 = [];
+            for (let i = 0; i < 60; i++) {
+              ganji60.push(tiangan[i % 10] + dizhi[i % 12]);
             }
-            const yyyy = date.getFullYear();
-            const mm = date.getMonth() + 1;
-            const dd = date.getDate();
-            const ganji = window.junghunCalendar.getGanji(yyyy, mm, dd);
             const zodiacMap = {
               '자': '쥐', '축': '소', '인': '호랑이', '묘': '토끼', '진': '용', '사': '뱀',
               '오': '말', '미': '양', '신': '원숭이', '유': '닭', '술': '개', '해': '돼지'
             };
-            return zodiacMap[ganji.day.jiji] || ganji.day.jijiKor || '알수없음';
+            // anchorDate를 하루 앞(1984-02-03)로 조정
+            const anchorDate = new Date('1984-01-25T00:00:00+09:00');
+            const targetDate = new Date(date.getTime());
+            targetDate.setHours(0, 0, 0, 0);
+            const diffInDays = Math.floor((targetDate - anchorDate) / (1000 * 60 * 60 * 24));
+            const ganjiIndex = (diffInDays % 60 + 60) % 60;
+            const ganji = ganji60[ganjiIndex];
+            const jiji = ganji[1];
+            return zodiacMap[jiji] || '알수없음';
         },
         getMoonPhase(date) { const LUNAR_CYCLE = 29.530588853; const refNewMoon = new Date('2024-02-10'); const daysSinceNewMoon = ((date - refNewMoon) / (1000 * 60 * 60 * 24)) % LUNAR_CYCLE; if (daysSinceNewMoon < 1.84) return {name: '그믐달'}; if (daysSinceNewMoon < 5.53) return {name: '초승달'}; if (daysSinceNewMoon < 12.91) return {name: '상현달'}; if (daysSinceNewMoon < 16.61) return {name: '보름달'}; if (daysSinceNewMoon < 23.99) return {name: '하현달'}; return {name: '그믐달'}; },
         getCurrentSeason(date) { return this.getSeasonByMonth(date.getMonth() + 1); },
@@ -525,10 +531,10 @@ const FortuneApp = {
         },
         generateZodiacAdvice(userAnimal, dayAnimal, score, randomFunc) {
         const keywords = this.data.adviceKeywords.zodiac;
-        const relation = this.getZodiacRelation(userAnimal, dayAnimal);
-        const userAnimalData = keywords.animals[userAnimal];
-        const dayAnimalData = keywords.animals[dayAnimal];
-        const relationData = keywords.relations[relation.type];
+            const relation = this.getZodiacRelation(userAnimal, dayAnimal);
+            const userAnimalData = keywords.animals[userAnimal];
+            const dayAnimalData = keywords.animals[dayAnimal];
+            const relationData = keywords.relations[relation.type];
 
         // 방어 코드 추가
         if (!userAnimalData || !dayAnimalData || !relationData) {
@@ -538,20 +544,20 @@ const FortuneApp = {
             };
         }
 
-        const greeting = userAnimalData.greeting;
-        const relationTitle = relationData.title;
-        const intro = `오늘은 '${dayAnimal}의 날'로, 당신의 띠와 '${relation.text}' 관계를 이루며 ${score.toFixed(1)}점의 궁합을 자랑합니다! 오늘의 인연은 바로 당신의 **'${relationTitle}'**${this.getKoreanParticle(relationTitle, '이/가')} 될 거예요.`;
-
-        const userTrait = userAnimalData.trait;
-        const dayTrait = dayAnimalData.trait;
-        const synergyTemplate = this.getRandomElement(relationData.structures, randomFunc);
-        const synergy = synergyTemplate
-            .replace('{userTraitParticle}', this.getKoreanParticle(userTrait, '은/는'))
-            .replace('{userTrait}', userTrait)
-            .replace('{dayTraitParticle}', this.getKoreanParticle(dayTrait, '을/를'))
+            const greeting = userAnimalData.greeting;
+            const relationTitle = relationData.title;
+            const intro = `오늘은 '${dayAnimal}의 날'로, 당신의 띠와 '${relation.text}' 관계를 이루며 ${score.toFixed(1)}점의 궁합을 자랑합니다! 오늘의 인연은 바로 당신의 **'${relationTitle}'**${this.getKoreanParticle(relationTitle, '이/가')} 될 거예요.`;
+            
+            const userTrait = userAnimalData.trait;
+            const dayTrait = dayAnimalData.trait;
+            const synergyTemplate = this.getRandomElement(relationData.structures, randomFunc);
+            const synergy = synergyTemplate
+                .replace('{userTraitParticle}', this.getKoreanParticle(userTrait, '은/는'))
+                .replace('{userTrait}', userTrait)
+                .replace('{dayTraitParticle}', this.getKoreanParticle(dayTrait, '을/를'))
             .replace('{dayTrait}', dayTrait)
             .replace(/\{dayAnimal\}/g, dayAnimal);
-
+            
         // --- 띠 궁합 행동 조언 3개 ---
         const advices = this.getRandomZodiacAdvices(relation.type, dayAnimal);
         const actionList = `<ul class='mt-2 text-yellow-200 text-sm pl-4 list-disc'>${advices.map(a => `<li>${a}</li>`).join('')}</ul>`;
@@ -559,23 +565,23 @@ const FortuneApp = {
         // 긍정 습관/미션은 더 이상 여기서 추가하지 않음
         const finalDesc = `${intro}<br><br>${synergy}<br><br><strong class='mt-2 block'>띠 궁합 행동 조언:</strong> ${actionList}`;
 
-        return { title: greeting, desc: finalDesc };
-    },
+            return { title: greeting, desc: finalDesc };
+        },
         generateSymbolAdvice(birthSeason, currentSeason, birthMonth, score, randomFunc) {
         const keywords = this.data.adviceKeywords.symbol;
-        const seasonData = keywords.seasons[birthSeason];
-        const symbolData = keywords.symbols[birthMonth];
+            const seasonData = keywords.seasons[birthSeason];
+            const symbolData = keywords.symbols[birthMonth];
 
-        const intro = `현재 계절 **'${currentSeason}'**의 활기찬 기운이 당신의 탄생월(${birthMonth}월, ${birthSeason})의 에너지와 ${score.toFixed(1)}점의 조화를 이룹니다. 당신의 탄생석 ${symbolData.stone.name}과(와) 탄생화 ${symbolData.flower.name}은(는) 오늘 당신의 강력한 파트너가 될 것입니다.`;
-        const harmony = `<strong class='mt-2 block'>계절과 탄생 상징의 조화:</strong> ${seasonData.phrase}`;
-        const cosmicAdviceTitle = `<strong class='mt-2 block'>코스믹 조언:</strong>`;
-        const stoneAdvice = `💎 <strong class="text-yellow-100">${symbolData.stone.name}의 힘 활용하기:</strong> ${symbolData.stone.advice}`;
-        const flowerAdvice = `🌸 <strong class="text-yellow-100">${symbolData.flower.name}의 마음으로 집중하기:</strong> ${symbolData.flower.advice}`;
-        const conclusion = this.getRandomElement(keywords.conclusions, randomFunc)
-            .replace('{season}', currentSeason)
-            .replace('{stoneKeyword}', symbolData.stone.keyword)
-            .replace('{flowerKeyword}', symbolData.flower.keyword);
-
+            const intro = `현재 계절 **'${currentSeason}'**의 활기찬 기운이 당신의 탄생월(${birthMonth}월, ${birthSeason})의 에너지와 ${score.toFixed(1)}점의 조화를 이룹니다. 당신의 탄생석 ${symbolData.stone.name}과(와) 탄생화 ${symbolData.flower.name}은(는) 오늘 당신의 강력한 파트너가 될 것입니다.`;
+            const harmony = `<strong class='mt-2 block'>계절과 탄생 상징의 조화:</strong> ${seasonData.phrase}`;
+            const cosmicAdviceTitle = `<strong class='mt-2 block'>코스믹 조언:</strong>`;
+            const stoneAdvice = `💎 <strong class="text-yellow-100">${symbolData.stone.name}의 힘 활용하기:</strong> ${symbolData.stone.advice}`;
+            const flowerAdvice = `🌸 <strong class="text-yellow-100">${symbolData.flower.name}의 마음으로 집중하기:</strong> ${symbolData.flower.advice}`;
+            const conclusion = this.getRandomElement(keywords.conclusions, randomFunc)
+                .replace('{season}', currentSeason)
+                .replace('{stoneKeyword}', symbolData.stone.keyword)
+                .replace('{flowerKeyword}', symbolData.flower.keyword);
+            
         // --- 긍정 습관/미션 2개 텍스트로 추가 ---
         const habits = this.getRandomPositiveHabits();
         const habitsText = `
@@ -589,8 +595,8 @@ const FortuneApp = {
 
         const finalDesc = `${intro}<br><br>${harmony}<br><br>${cosmicAdviceTitle}<br>${stoneAdvice}<br>${flowerAdvice}<br><br>${conclusion}${habitsText}`;
 
-        return { title: "탄생 상징의 속삭임", desc: finalDesc };
-    },
+            return { title: "탄생 상징의 속삭임", desc: finalDesc };
+        },
         calculateShinsal(userZodiac, dailyZodiac) {
         if (userZodiac === dailyZodiac) return null; // 내 띠와 오늘의 띠가 같으면 신살 없음
         const group = this.data.shinsalData.groups[userZodiac];
@@ -1528,6 +1534,83 @@ function getKoreaDate(date = new Date()) {
     const local = new Date(date.getTime() + (date.getTimezoneOffset() + koreaOffset) * 60000);
     local.setHours(0, 0, 0, 0);
     return local;
+}
+
+// ganji 라이브러리 import
+const { getGanji } = require('ganji');
+
+// 지지 → 한글 띠 변환 맵
+const zodiacMap = {
+  '자': '쥐', '축': '소', '인': '호랑이', '묘': '토끼', '진': '용', '사': '뱀',
+  '오': '말', '미': '양', '신': '원숭이', '유': '닭', '술': '개', '해': '돼지'
+};
+
+/**
+ * 만세력(일진) 기준 오늘의 띠(지지) 반환
+ * @param {Date} date - JS Date 객체 (기본값: 오늘)
+ * @returns {string} - 오늘의 띠(지지)
+ */
+function getDailyZodiacByGanji(date = new Date()) {
+    const result = getGanji(date);
+    return zodiacMap[result.day.jiji] || result.day.jiji;
+}
+
+// 사용 예시
+console.log(getDailyZodiacByGanji(new Date(2025, 6, 22))); // '개'
+console.log(getDailyZodiacByGanji()); // 오늘의 띠
+
+// 1900~2100년 음력 설(양력) 날짜 테이블 (일부 예시, 실제로는 전체 데이터 필요)
+const lunarNewYearTable = {
+  1900: '1900-01-31', 1901: '1901-02-19', 1902: '1902-02-08', 1903: '1903-01-29', 1904: '1904-02-16',
+  1905: '1905-02-04', 1906: '1906-01-25', 1907: '1907-02-13', 1908: '1908-02-02', 1909: '1909-01-22',
+  1910: '1910-02-10', 1911: '1911-01-30', 1912: '1912-02-18', 1913: '1913-02-06', 1914: '1914-01-26',
+  1915: '1915-02-14', 1916: '1916-02-03', 1917: '1917-01-23', 1918: '1918-02-11', 1919: '1919-02-01',
+  1920: '1920-02-20', 1921: '1921-02-08', 1922: '1922-01-28', 1923: '1923-02-16', 1924: '1924-02-05',
+  1925: '1925-01-24', 1926: '1926-02-13', 1927: '1927-02-02', 1928: '1928-01-23', 1929: '1929-02-10',
+  1930: '1930-01-30', 1931: '1931-02-17', 1932: '1932-02-06', 1933: '1933-01-26', 1934: '1934-02-14',
+  1935: '1935-02-04', 1936: '1936-01-24', 1937: '1937-02-11', 1938: '1938-01-31', 1939: '1939-02-19',
+  1940: '1940-02-08', 1941: '1941-01-27', 1942: '1942-02-15', 1943: '1943-02-05', 1944: '1944-01-25',
+  1945: '1945-02-13', 1946: '1946-02-02', 1947: '1947-01-22', 1948: '1948-02-10', 1949: '1949-01-29',
+  1950: '1950-02-17', 1951: '1951-02-06', 1952: '1952-01-27', 1953: '1953-02-14', 1954: '1954-02-03',
+  1955: '1955-01-24', 1956: '1956-02-12', 1957: '1957-01-31', 1958: '1958-02-18', 1959: '1959-02-08',
+  1960: '1960-01-28', 1961: '1961-02-15', 1962: '1962-02-05', 1963: '1963-01-25', 1964: '1964-02-13',
+  1965: '1965-02-02', 1966: '1966-01-21', 1967: '1967-02-09', 1968: '1968-01-30', 1969: '1969-02-17',
+  1970: '1970-02-06', 1971: '1971-01-27', 1972: '1972-02-15', 1973: '1973-02-03', 1974: '1974-01-23',
+  1975: '1975-02-11', 1976: '1976-01-31', 1977: '1977-02-18', 1978: '1978-02-07', 1979: '1979-01-28',
+  1980: '1980-02-16', 1981: '1981-02-05', 1982: '1982-01-25', 1983: '1983-02-13', 1984: '1984-02-02',
+  1985: '1985-02-20', 1986: '1986-02-09', 1987: '1987-01-29', 1988: '1988-02-17', 1989: '1989-02-06',
+  1990: '1990-01-27', 1991: '1991-02-15', 1992: '1992-02-04', 1993: '1993-01-23', 1994: '1994-02-10',
+  1995: '1995-01-31', 1996: '1996-02-19', 1997: '1997-02-07', 1998: '1998-01-28', 1999: '1999-02-16',
+  2000: '2000-02-05', 2001: '2001-01-24', 2002: '2002-02-12', 2003: '2003-02-01', 2004: '2004-01-22',
+  2005: '2005-02-09', 2006: '2006-01-29', 2007: '2007-02-18', 2008: '2008-02-07', 2009: '2009-01-26',
+  2010: '2010-02-14', 2011: '2011-02-03', 2012: '2012-01-23', 2013: '2013-02-10', 2014: '2014-01-31',
+  2015: '2015-02-19', 2016: '2016-02-08', 2017: '2017-01-28', 2018: '2018-02-16', 2019: '2019-02-05',
+  2020: '2020-01-25', 2021: '2021-02-12', 2022: '2022-02-01', 2023: '2023-01-22', 2024: '2024-02-10',
+  2025: '2025-01-29', 2026: '2026-02-17', 2027: '2027-02-06', 2028: '2028-01-26', 2029: '2029-02-13',
+  2030: '2030-02-03', 2031: '2031-01-23', 2032: '2032-02-11', 2033: '2033-01-31', 2034: '2034-02-19',
+  2035: '2035-02-08', 2036: '2036-01-28', 2037: '2037-02-15', 2038: '2038-02-04', 2039: '2039-01-24',
+  2040: '2040-02-12', 2041: '2041-02-01', 2042: '2042-01-22', 2043: '2043-02-10', 2044: '2044-01-30',
+  2045: '2045-02-17', 2046: '2046-02-06', 2047: '2047-01-26', 2048: '2048-02-14', 2049: '2049-02-02',
+  2050: '2050-01-23', 2051: '2051-02-11', 2052: '2052-01-31', 2053: '2053-02-18', 2054: '2054-02-08',
+  2055: '2055-01-28', 2056: '2056-02-15', 2057: '2057-02-04', 2058: '2058-01-24', 2059: '2059-02-12',
+  2060: '2060-02-02', 2061: '2061-01-21', 2062: '2062-02-09', 2063: '2063-01-29', 2064: '2064-02-17',
+  2065: '2065-02-05', 2066: '2066-01-26', 2067: '2067-02-14', 2068: '2068-02-03', 2069: '2069-01-23',
+  2070: '2070-02-11', 2071: '2071-01-31', 2072: '2072-02-19', 2073: '2073-02-07', 2074: '2074-01-27',
+  2075: '2075-02-15', 2076: '2076-02-05', 2077: '2077-01-24', 2078: '2078-02-12', 2079: '2079-02-02',
+  2080: '2080-01-22', 2081: '2081-02-09', 2082: '2082-01-29', 2083: '2083-02-17', 2084: '2084-02-06',
+  2085: '2085-01-25', 2086: '2086-02-13', 2087: '2087-02-03', 2088: '2088-01-24', 2089: '2089-02-10',
+  2090: '2090-01-30', 2091: '2091-02-18', 2092: '2092-02-07', 2093: '2093-01-27', 2094: '2094-02-15',
+  2095: '2095-02-05', 2096: '2096-01-25', 2097: '2097-02-12', 2098: '2098-02-01', 2099: '2099-01-21',
+  2100: '2100-02-09'
+};
+
+function getZodiacByBirthday(birthDate) {
+  const year = birthDate.getFullYear();
+  const lunarNewYear = new Date(lunarNewYearTable[year]);
+  // 음력 설 이전이면 전년도 띠
+  const zodiacYear = (birthDate < lunarNewYear) ? year - 1 : year;
+  const zodiacOrder = ['쥐', '소', '호랑이', '토끼', '용', '뱀', '말', '양', '원숭이', '닭', '개', '돼지'];
+  return zodiacOrder[(zodiacYear - 4) % 12];
 }
 
 </script>
